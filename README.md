@@ -1,20 +1,48 @@
 # AP Reconciliation Orchestrator
 
-> **A production-minded MVP that automates accounts payable invoice processing with intelligent cost management and complete audit trails**
+> **The first AP automation engine designed for unit economics: treating model selection as a risk-adjusted financial decision.**
+
+## 📈 The Core Thesis: Economics-First AI
+
+Most AP automation tools use a "LLM-first" brute force approach. This is commercially unviable for high-volume workflows because the cost of the AI can exceed the processing fee. 
+
+**This orchestrator solves the "Cost-per-Invoice" problem by treating every document as an economic trade-off.** It uses a **Hierarchy of Resolution** to ensure you never spend more on AI than the risk justifies.
+
+### The Hierarchy of Resolution
+The system always attempts to solve the invoice at the cheapest possible level before "falling down" to the next:
+
+1.  **Deterministic Rules** (Nearly Free) → Catch duplicates/errors before any AI sees them.
+2.  **Semantic Cache** (Free) → Reuse previous AI decisions for recurring invoices.
+3.  **Tier A AI** (Fractional Penny) → Handle high-confidence, low-value matches ($0.0001).
+4.  **Tier C AI** (Premium) → Reserve expensive, high-reasoning models for $10k+ risk or complex discrepancies ($0.01).
+5.  **Human** (Most Expensive) → The final fallback for true anomalies.
+
+---
+
+## 🏗️ Architecture for Engineering Teams
+
+Engineers love this project because it moves away from "AI Magic" and into **Deterministic Orchestration**.
+
+### 1. The Deterministic Moat
+The `RulesEngine` acts as a moat. If an invoice is a fuzzy duplicate or missing a tax ID, the Run is killed immediately.
+*   **Result:** 0.0 tokens spent on "broken" invoices.
+
+### 2. Risk-Based Escalation
+The `LLMRouter` doesn't just look at "complexity"; it looks at **Liability**. 
+*   **Trigger:** If an invoice is >$10,000, it automatically escalates from Tier A to Tier C. 
+*   **Logic:** The "Cost of Error" on a $10k invoice justifies the $0.01 premium model. On a $50 invoice, that same model would destroy your margins.
+
+### 3. Verification over Generation
+Instead of letting an LLM "decide" the outcome, the `VerificationService` enforces invariants on the LLM's output.
+*   **Safety:** If the LLM claims a match but the line-item math doesn't check out, the system flags it as an exception.
+
+### 4. ROI-Focused Metrics
+We don't just track "API Spend." We track **Cost per Verified Invoice**. 
+*   **The Goal:** Drive the cost of a successful approval down to the lowest possible floor while maintaining 99.9% accuracy.
+
+---
 
 ## What Does This Do?
-
-Imagine you're an accounting department receiving hundreds of invoices every day. Each invoice needs to be:
-1. **Validated** - Does it have all required information?
-2. **Matched** - Does it match a purchase order and receipt?
-3. **Verified** - Are the amounts and quantities correct?
-4. **Approved or Escalated** - Can it be auto-approved or does it need human review?
-
-This system automates that entire workflow while:
-- **Minimizing costs** by using cheaper AI models when possible
-- **Tracking every decision** so you can replay and audit any invoice
-- **Managing exceptions** with SLA deadlines for items that need human review
-- **Measuring efficiency** with metrics like "cost per verified invoice"
 
 ## The Big Picture
 
