@@ -9,7 +9,7 @@ Implements validation rules that run before LLM processing:
 """
 
 import hashlib
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as dc_field
 from datetime import date, timedelta
 from decimal import Decimal
 from difflib import SequenceMatcher
@@ -49,16 +49,16 @@ class RuleViolation:
     field: Optional[str] = None
     message: str = ""
     severity: str = "medium"  # low, medium, high
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: Dict[str, Any] = dc_field(default_factory=dict)
 
 
 @dataclass
 class RulesResult:
     """Result of running all validation rules."""
     passed: bool
-    violations: List[RuleViolation] = field(default_factory=list)
+    violations: List[RuleViolation] = dc_field(default_factory=list)
     po_match: Optional[PurchaseOrder] = None
-    warnings: List[str] = field(default_factory=list)
+    warnings: List[str] = dc_field(default_factory=list)
     
     def has_blocking_violations(self) -> bool:
         """Check if there are any high-severity violations."""

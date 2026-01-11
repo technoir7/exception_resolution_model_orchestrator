@@ -9,7 +9,7 @@ Provides a pluggable interface for LLM providers with:
 
 import json
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as dc_field
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum

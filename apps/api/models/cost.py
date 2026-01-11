@@ -90,8 +90,8 @@ class CostEvent(TenantScopedBase):
         nullable=False,
     )
     
-    # Additional metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    # Additional event metadata
+    event_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     
     # Relationships
     pipeline_run: Mapped[Optional["InvoicePipelineRun"]] = relationship(

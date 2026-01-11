@@ -80,8 +80,8 @@ class AuditEvent(TenantScopedBase):
     actor_type: Mapped[str] = mapped_column(String(20), default="system", nullable=False)
     actor_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
     
-    # Additional metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    # Additional event metadata
+    event_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     
     # Relationships
     pipeline_run: Mapped["InvoicePipelineRun"] = relationship(

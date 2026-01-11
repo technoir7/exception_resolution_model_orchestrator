@@ -24,6 +24,8 @@ class PipelineState(str, Enum):
     COMPLETED = "completed"
     EXCEPTION = "exception"
     FAILED = "failed"
+    DEAD_LETTER = "dead_letter"  # Permanently failed after max retries
+    FAILED_PERMANENTLY = "dead_letter"  # Alias for dead letter
 
 
 class InvoicePipelineRun(TenantScopedBase):
@@ -78,6 +80,13 @@ class InvoicePipelineRun(TenantScopedBase):
     # Error tracking
     error_message: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     
+    # Recovery and checkpoint tracking
+    last_checkpoint: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # Last successful step
+    completed_steps: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    retry_count: Mapped[int] = mapped_column(default=0, nullable=False)
+    failure_count: Mapped[int] = mapped_column(default=0, nullable=False)
+    processing_timeout: Mapped[int] = mapped_column(default=300, nullable=False)  # seconds
+    
     # State history as JSON array
     state_history: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
     
@@ -124,6 +133,28 @@ class InvoicePipelineRun(TenantScopedBase):
         }
         if new_state in timestamp_map:
             setattr(self, timestamp_map[new_state], now)
+    
+    @property
+    def can_resume(self) -> bool:
+        """Check if this run can be resumed from a failed state."""
+        return self.state in [PipelineState.FAILED, PipelineState.EXCEPTION] and self.failure_count < 3
+    
+    @property
+    def is_resumable(self) -> bool:
+        """Alias for can_resume."""
+        return self.can_resume
+    
+    @property
+    def is_stuck(self) -> bool:
+        """Check if this run appears to be stuck in processing."""
+        if self.state not in [PipelineState.VALIDATING, PipelineState.MATCHING, 
+                               PipelineState.LLM_PROCESSING, PipelineState.VERIFYING]:
+            return False
+        # Check if processing started but hasn't progressed
+        started_at = getattr(self, f"{self.state.value.split('_')[0]}_started_at", None)
+        if started_at and (datetime.utcnow() - started_at).total_seconds() > self.processing_timeout:
+            return True
+        return False
     
     def __repr__(self) -> str:
         return f"<InvoicePipelineRun(id={self.id}, invoice_id={self.invoice_id}, state={self.state})>"

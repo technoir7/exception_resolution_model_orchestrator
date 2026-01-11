@@ -72,6 +72,29 @@ class LLMRouter:
         self.high_risk_amount = settings.router_high_risk_amount
         self.daily_cap = settings.router_tenant_daily_cap
         self.max_retries = settings.router_max_retries
+        
+        # Circuit breaker configuration
+        self.circuit_breaker_threshold = 5  # failures before opening circuit
+        self.max_consecutive_failures = 5
+        self.circuit_states: dict[ModelTier, str] = {
+            ModelTier.TIER_A: "closed",
+            ModelTier.TIER_B: "closed",
+            ModelTier.TIER_C: "closed",
+        }
+        self._failure_counts: dict[ModelTier, int] = {
+            ModelTier.TIER_A: 0,
+            ModelTier.TIER_B: 0,
+            ModelTier.TIER_C: 0,
+        }
+        
+        # Retry configuration
+        self.base_retry_delay = 1.0  # seconds
+        self.retry_limit = settings.router_max_retries
+        self.charge_failed_calls = False  # Don't charge budget for failures
+        self.failed_call_cost = Decimal("0")  # Cost attribution for failed calls
+        
+        # Budget tracking
+        self.remaining_budget: Optional[Decimal] = None
     
     async def route(self, context: RouterContext) -> RouterDecision:
         spend_today = await self._get_tenant_spend_today()

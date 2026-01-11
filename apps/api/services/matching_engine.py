@@ -2,7 +2,7 @@
 Matching Engine for 2-way and 3-way invoice matching.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as dc_field
 from decimal import Decimal
 from enum import Enum
 from typing import Optional, List, Dict, Any
@@ -48,7 +48,7 @@ class MatchResult:
     match_type: MatchType
     status: MatchStatus
     confidence: float
-    variances: List[VarianceItem] = field(default_factory=list)
+    variances: List[VarianceItem] = dc_field(default_factory=list)
     po: Optional[PurchaseOrder] = None
     receipt: Optional[Receipt] = None
     summary: str = ""

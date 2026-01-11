@@ -3,7 +3,7 @@ Verification Layer for LLM output validation.
 """
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as dc_field
 from decimal import Decimal
 from typing import Optional, List, Dict, Any, Type
 from uuid import UUID
@@ -19,14 +19,14 @@ class VerificationError:
     error_type: str
     message: str
     field: Optional[str] = None
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: Dict[str, Any] = dc_field(default_factory=dict)
 
 
 @dataclass
 class VerificationResult:
     valid: bool
-    errors: List[VerificationError] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: List[VerificationError] = dc_field(default_factory=list)
+    warnings: List[str] = dc_field(default_factory=list)
     sanitized_output: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
