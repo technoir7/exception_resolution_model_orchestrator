@@ -1,0 +1,25 @@
+{
+    "invoice_number": "INV-2024-009",
+    "invoice_date": "2024-01-21",
+    "due_date": "2024-02-20",
+    "vendor_id": "V999",
+    "vendor_name": "Unknown Vendor Corp",
+    "po_number": "PO-2024-003",
+    "currency": "USD",
+    "subtotal": "1500.00",
+    "tax_amount": "120.00",
+    "total_amount": "1620.00",
+    "line_items": [
+        {
+            "line_number": 1,
+            "description": "Gadget C",
+            "quantity": 30,
+            "unit_price": "50.00",
+            "amount": "1500.00"
+        }
+    ],
+    "_fixture_type": "exception",
+    "_expected_outcome": "exception",
+    "_exception_type": "vendor_mismatch",
+    "_note": "Vendor V999 doesn't match PO vendor V001"
+}

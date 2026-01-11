@@ -1,0 +1,87 @@
+[
+    {
+        "receipt_number": "REC-2024-001",
+        "receipt_date": "2024-01-14",
+        "po_number": "PO-2024-001",
+        "vendor_id": "V001",
+        "total_amount": "5000.00",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Widget A",
+                "quantity": 100
+            },
+            {
+                "line_number": 2,
+                "description": "Widget B",
+                "quantity": 50
+            }
+        ]
+    },
+    {
+        "receipt_number": "REC-2024-002",
+        "receipt_date": "2024-01-16",
+        "po_number": "PO-2024-002",
+        "vendor_id": "V002",
+        "total_amount": "3200.00",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Circuit Board X1",
+                "quantity": 20
+            },
+            {
+                "line_number": 2,
+                "description": "Power Supply Unit",
+                "quantity": 16
+            }
+        ]
+    },
+    {
+        "receipt_number": "REC-2024-003",
+        "receipt_date": "2024-01-19",
+        "po_number": "PO-2024-003",
+        "vendor_id": "V001",
+        "total_amount": "1500.00",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Gadget C",
+                "quantity": 30
+            }
+        ]
+    },
+    {
+        "receipt_number": "REC-2024-004",
+        "receipt_date": "2024-01-22",
+        "po_number": "PO-2024-004",
+        "vendor_id": "V003",
+        "total_amount": "800.00",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Office Chair",
+                "quantity": 4
+            }
+        ]
+    },
+    {
+        "receipt_number": "REC-2024-005",
+        "receipt_date": "2024-01-25",
+        "po_number": "PO-2024-005",
+        "vendor_id": "V002",
+        "total_amount": "12000.00",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Server Rack",
+                "quantity": 2
+            },
+            {
+                "line_number": 2,
+                "description": "Network Switch",
+                "quantity": 6
+            }
+        ]
+    }
+]

@@ -1,0 +1,20 @@
+[
+    {
+        "id": "V001",
+        "name": "Acme Supplies Inc",
+        "tax_id": "12-3456789",
+        "payment_terms": "NET30"
+    },
+    {
+        "id": "V002",
+        "name": "Tech Components LLC",
+        "tax_id": "98-7654321",
+        "payment_terms": "NET45"
+    },
+    {
+        "id": "V003",
+        "name": "Office Solutions Co",
+        "tax_id": "55-1234567",
+        "payment_terms": "NET30"
+    }
+]

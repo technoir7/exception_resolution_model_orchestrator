@@ -1,0 +1,24 @@
+{
+    "invoice_number": "INV-2024-003",
+    "invoice_date": "2024-01-18",
+    "due_date": "2024-02-17",
+    "vendor_id": "V001",
+    "vendor_name": "Acme Supplies Inc",
+    "po_number": "PO-MISSING-999",
+    "currency": "USD",
+    "subtotal": "2000.00",
+    "tax_amount": "160.00",
+    "total_amount": "2160.00",
+    "line_items": [
+        {
+            "line_number": 1,
+            "description": "Unknown Product",
+            "quantity": 40,
+            "unit_price": "50.00",
+            "amount": "2000.00"
+        }
+    ],
+    "_fixture_type": "exception",
+    "_expected_outcome": "exception",
+    "_exception_type": "missing_po"
+}

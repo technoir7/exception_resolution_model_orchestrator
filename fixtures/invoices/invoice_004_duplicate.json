@@ -1,0 +1,32 @@
+{
+    "invoice_number": "INV-2024-001",
+    "invoice_date": "2024-01-15",
+    "due_date": "2024-02-14",
+    "vendor_id": "V001",
+    "vendor_name": "Acme Supplies Inc",
+    "po_number": "PO-2024-001",
+    "currency": "USD",
+    "subtotal": "5000.00",
+    "tax_amount": "400.00",
+    "total_amount": "5400.00",
+    "line_items": [
+        {
+            "line_number": 1,
+            "description": "Widget A",
+            "quantity": 100,
+            "unit_price": "25.00",
+            "amount": "2500.00"
+        },
+        {
+            "line_number": 2,
+            "description": "Widget B",
+            "quantity": 50,
+            "unit_price": "50.00",
+            "amount": "2500.00"
+        }
+    ],
+    "_fixture_type": "exception",
+    "_expected_outcome": "exception",
+    "_exception_type": "duplicate",
+    "_note": "Exact duplicate of invoice_001_clean"
+}

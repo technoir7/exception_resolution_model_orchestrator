@@ -1,0 +1,25 @@
+{
+    "invoice_number": "INV-2024-005",
+    "invoice_date": "2024-01-20",
+    "due_date": "2024-02-19",
+    "vendor_id": "V001",
+    "vendor_name": "Acme Supplies Inc",
+    "po_number": "PO-2024-003",
+    "currency": "USD",
+    "subtotal": "1800.00",
+    "tax_amount": "144.00",
+    "total_amount": "1944.00",
+    "line_items": [
+        {
+            "line_number": 1,
+            "description": "Gadget C",
+            "quantity": 30,
+            "unit_price": "60.00",
+            "amount": "1800.00"
+        }
+    ],
+    "_fixture_type": "exception",
+    "_expected_outcome": "exception",
+    "_exception_type": "amount_variance",
+    "_note": "20% over PO amount ($1500)"
+}

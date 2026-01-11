@@ -1,0 +1,23 @@
+{
+    "invoice_number": "INV-2024-006",
+    "invoice_date": "2024-01-23",
+    "due_date": "2024-02-22",
+    "vendor_id": "V003",
+    "vendor_name": "Office Solutions Co",
+    "po_number": "PO-2024-004",
+    "currency": "USD",
+    "subtotal": "800.00",
+    "tax_amount": "64.00",
+    "total_amount": "864.00",
+    "line_items": [
+        {
+            "line_number": 1,
+            "description": "Office Chair",
+            "quantity": 4,
+            "unit_price": "200.00",
+            "amount": "800.00"
+        }
+    ],
+    "_fixture_type": "clean",
+    "_expected_outcome": "approved"
+}

@@ -1,0 +1,30 @@
+{
+    "invoice_number": "INV-2024-008",
+    "invoice_date": "2024-01-26",
+    "due_date": "2024-02-25",
+    "vendor_id": "V002",
+    "vendor_name": "Tech Components LLC",
+    "po_number": "PO-2024-005",
+    "currency": "USD",
+    "subtotal": "12000.00",
+    "tax_amount": "960.00",
+    "total_amount": "12960.00",
+    "line_items": [
+        {
+            "line_number": 1,
+            "description": "Server Rack",
+            "quantity": 2,
+            "unit_price": "3000.00",
+            "amount": "6000.00"
+        },
+        {
+            "line_number": 2,
+            "description": "Network Switch",
+            "quantity": 6,
+            "unit_price": "1000.00",
+            "amount": "6000.00"
+        }
+    ],
+    "_fixture_type": "clean",
+    "_expected_outcome": "approved"
+}

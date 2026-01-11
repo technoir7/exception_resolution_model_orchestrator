@@ -1,0 +1,30 @@
+{
+    "invoice_number": "INV-2024-002",
+    "invoice_date": "2024-01-17",
+    "due_date": "2024-02-16",
+    "vendor_id": "V002",
+    "vendor_name": "Tech Components LLC",
+    "po_number": "PO-2024-002",
+    "currency": "USD",
+    "subtotal": "3200.00",
+    "tax_amount": "256.00",
+    "total_amount": "3456.00",
+    "line_items": [
+        {
+            "line_number": 1,
+            "description": "Circuit Board X1",
+            "quantity": 20,
+            "unit_price": "80.00",
+            "amount": "1600.00"
+        },
+        {
+            "line_number": 2,
+            "description": "Power Supply Unit",
+            "quantity": 16,
+            "unit_price": "100.00",
+            "amount": "1600.00"
+        }
+    ],
+    "_fixture_type": "clean",
+    "_expected_outcome": "approved"
+}

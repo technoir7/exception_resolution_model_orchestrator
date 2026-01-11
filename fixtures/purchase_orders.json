@@ -1,0 +1,113 @@
+[
+    {
+        "po_number": "PO-2024-001",
+        "po_date": "2024-01-10",
+        "vendor_id": "V001",
+        "vendor_name": "Acme Supplies Inc",
+        "currency": "USD",
+        "total_amount": "5000.00",
+        "status": "open",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Widget A",
+                "quantity": 100,
+                "unit_price": "25.00",
+                "amount": "2500.00"
+            },
+            {
+                "line_number": 2,
+                "description": "Widget B",
+                "quantity": 50,
+                "unit_price": "50.00",
+                "amount": "2500.00"
+            }
+        ]
+    },
+    {
+        "po_number": "PO-2024-002",
+        "po_date": "2024-01-12",
+        "vendor_id": "V002",
+        "vendor_name": "Tech Components LLC",
+        "currency": "USD",
+        "total_amount": "3200.00",
+        "status": "open",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Circuit Board X1",
+                "quantity": 20,
+                "unit_price": "80.00",
+                "amount": "1600.00"
+            },
+            {
+                "line_number": 2,
+                "description": "Power Supply Unit",
+                "quantity": 16,
+                "unit_price": "100.00",
+                "amount": "1600.00"
+            }
+        ]
+    },
+    {
+        "po_number": "PO-2024-003",
+        "po_date": "2024-01-15",
+        "vendor_id": "V001",
+        "vendor_name": "Acme Supplies Inc",
+        "currency": "USD",
+        "total_amount": "1500.00",
+        "status": "open",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Gadget C",
+                "quantity": 30,
+                "unit_price": "50.00",
+                "amount": "1500.00"
+            }
+        ]
+    },
+    {
+        "po_number": "PO-2024-004",
+        "po_date": "2024-01-18",
+        "vendor_id": "V003",
+        "vendor_name": "Office Solutions Co",
+        "currency": "USD",
+        "total_amount": "800.00",
+        "status": "open",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Office Chair",
+                "quantity": 4,
+                "unit_price": "200.00",
+                "amount": "800.00"
+            }
+        ]
+    },
+    {
+        "po_number": "PO-2024-005",
+        "po_date": "2024-01-20",
+        "vendor_id": "V002",
+        "vendor_name": "Tech Components LLC",
+        "currency": "USD",
+        "total_amount": "12000.00",
+        "status": "open",
+        "line_items": [
+            {
+                "line_number": 1,
+                "description": "Server Rack",
+                "quantity": 2,
+                "unit_price": "3000.00",
+                "amount": "6000.00"
+            },
+            {
+                "line_number": 2,
+                "description": "Network Switch",
+                "quantity": 6,
+                "unit_price": "1000.00",
+                "amount": "6000.00"
+            }
+        ]
+    }
+]
