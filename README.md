@@ -1,44 +1,65 @@
 # AP Reconciliation Orchestrator
 
-> **The first AP automation engine designed for unit economics: treating model selection as a risk-adjusted financial decision.**
+> **This isn't "AP software." This is AI systems infrastructure.**
 
-## 📈 The Core Thesis: Economics-First AI
+## 🎯 The Wedge → Platform Strategy
 
-Most AP automation tools use a "LLM-first" brute force approach. This is commercially unviable for high-volume workflows because the cost of the AI can exceed the processing fee. 
+**Start narrow. Prove economics. Expand laterally.**
 
-**This orchestrator solves the "Cost-per-Invoice" problem by treating every document as an economic trade-off.** It uses a **Hierarchy of Resolution** to ensure you never spend more on AI than the risk justifies.
+This project demonstrates a **cost-aware orchestration layer** that can route between deterministic rules, cached decisions, and tiered AI models based on risk and complexity. AP invoice reconciliation is the **opinionated wedge** — a workflow where:
 
-### The Hierarchy of Resolution
-The system always attempts to solve the invoice at the cheapest possible level before "falling down" to the next:
+1. **Unit economics matter immediately** (high volume, thin margins)
+2. **Ground truth exists** (POs, receipts, GL codes)
+3. **Cost of error is quantifiable** (duplicate payments, compliance fines)
 
-1.  **Deterministic Rules** (Nearly Free) → Catch duplicates/errors before any AI sees them.
-2.  **Semantic Cache** (Free) → Reuse previous AI decisions for recurring invoices.
-3.  **Tier A AI** (Fractional Penny) → Handle high-confidence, low-value matches ($0.0001).
-4.  **Tier C AI** (Premium) → Reserve expensive, high-reasoning models for $10k+ risk or complex discrepancies ($0.01).
-5.  **Human** (Most Expensive) → The final fallback for true anomalies.
+Once you prove **cost + accuracy dominance** in AP, the same infrastructure applies to:
+- **AR/Collections** (payment matching, dispute resolution)
+- **Procurement** (contract compliance, vendor onboarding)
+- **Expense Management** (receipt matching, policy enforcement)
+- **Any document-heavy workflow** where you need to balance AI cost vs. human cost
 
 ---
 
-## 🏗️ Architecture for Engineering Teams
+## 📈 The Core Thesis: Economics-First AI
 
-Engineers love this project because it moves away from "AI Magic" and into **Deterministic Orchestration**.
+Most automation tools use an "LLM-first" brute force approach: throw every document at GPT-4 and hope for the best. This is **commercially unviable** for high-volume workflows because the marginal cost of AI can exceed the processing fee.
+
+**This orchestrator treats model selection as a risk-adjusted financial decision.** It uses a **Hierarchy of Resolution** to ensure you never spend more on AI than the risk justifies.
+
+### The Hierarchy of Resolution
+The system always attempts to solve at the cheapest possible level before "falling down":
+
+1.  **Deterministic Rules** (~$0.000) → Catch duplicates/missing fields before any AI sees them
+2.  **Semantic Cache** (~$0.000) → Reuse previous AI decisions for recurring invoices
+3.  **Tier A AI** (~$0.0001/call) → High-confidence, low-value matches (e.g., GPT-3.5)
+4.  **Tier C AI** (~$0.01/call) → High-risk or complex cases (e.g., GPT-4)
+5.  **Human Review** (~$2-5/invoice) → Final fallback for true anomalies
+
+**The goal:** Drive the blended cost per verified invoice to <$0.05 while maintaining >99% accuracy.
+
+---
+
+## 🏗️ Why Engineers Pay Attention
+
+This project moves away from "AI magic" and into **deterministic orchestration with economic guardrails**.
 
 ### 1. The Deterministic Moat
-The `RulesEngine` acts as a moat. If an invoice is a fuzzy duplicate or missing a tax ID, the Run is killed immediately.
-*   **Result:** 0.0 tokens spent on "broken" invoices.
+The `RulesEngine` kills the run immediately if an invoice is a duplicate or missing required fields.
+*   **Result:** Zero tokens spent on "broken" invoices that would confuse an LLM anyway.
 
-### 2. Risk-Based Escalation
-The `LLMRouter` doesn't just look at "complexity"; it looks at **Liability**. 
-*   **Trigger:** If an invoice is >$10,000, it automatically escalates from Tier A to Tier C. 
-*   **Logic:** The "Cost of Error" on a $10k invoice justifies the $0.01 premium model. On a $50 invoice, that same model would destroy your margins.
+### 2. Risk-Based Escalation (Not Complexity-Based)
+The `LLMRouter` doesn't just look at "how hard is this?" — it looks at **"what's the liability?"**
+*   **Example:** A $50,000 invoice with 2% variance gets Tier C (premium model). A $200 invoice with the same variance gets Tier A (cheap model).
+*   **Logic:** The cost of error on a $50k invoice justifies the premium. On a $200 invoice, it destroys your margins.
 
-### 3. Verification over Generation
-Instead of letting an LLM "decide" the outcome, the `VerificationService` enforces invariants on the LLM's output.
-*   **Safety:** If the LLM claims a match but the line-item math doesn't check out, the system flags it as an exception.
+### 3. Verification Over Generation
+The `VerificationService` enforces invariants on LLM outputs.
+*   **Safety:** If the LLM claims a match but the line-item math doesn't add up, the system flags it as an exception.
+*   **No hallucination risk:** The LLM doesn't "decide" — it analyzes. The system decides based on verified facts.
 
-### 4. ROI-Focused Metrics
-We don't just track "API Spend." We track **Cost per Verified Invoice**. 
-*   **The Goal:** Drive the cost of a successful approval down to the lowest possible floor while maintaining 99.9% accuracy.
+### 4. Cost-per-Verified-Invoice (Not Just API Spend)
+We track **spend per successful outcome**, not just total spend.
+*   **Why it matters:** A Tier C model with 99% first-pass accuracy might be cheaper per verified invoice than a Tier A model with 60% accuracy (due to rework/exceptions).
 
 ---
 
@@ -61,13 +82,13 @@ We don't just track "API Spend." We track **Cost per Verified Invoice**.
 3. **Variance Check**: Invoice is 8% higher than PO ($5,400 vs $5,000) ⚠️
 4. **AI Decision**: Uses GPT-4 (Tier C) because of the variance, determines it's due to tax
 5. **Verification**: Validates the AI's reasoning and math ✅
-6. **Result**: Auto-approved with full audit trail, cost: $0.023
+6. **Result**: Auto-approved with full audit trail, cost: ~$0.02-0.05 (estimated)
 
 **Alternative Scenario**: Invoice references PO-MISSING-999 that doesn't exist
 - System immediately flags as "Missing PO" exception
 - Routes to AP Manager with 4-hour SLA
 - No expensive AI call needed for obvious issue
-- Cost: $0.001
+- Cost: ~$0.001 (rules-only, no AI)
 
 ## Key Features Explained
 
@@ -95,8 +116,8 @@ We don't just track "API Spend." We track **Cost per Verified Invoice**.
 
 | Tier | Model | When Used | Cost per 1K tokens |
 |------|-------|-----------|-------------------|
-| **A** | GPT-3.5 | High confidence (>90%), low risk (<$10K) | $0.0001 |
-| **B** | GPT-4-mini | Medium confidence (70-90%) or high-value invoices | $0.001 |
+| **A** | GPT-3.5 | High confidence (>90%), low risk (<$10K) | ~$0.0001-0.0005 |
+| **B** | GPT-4-mini | Medium confidence (70-90%) or high-value invoices | ~$0.001-0.005 |
 | **C** | GPT-4 | Low confidence (<70%), complex exceptions | $0.01 |
 
 **Escalation triggers**:
@@ -104,7 +125,7 @@ We don't just track "API Spend." We track **Cost per Verified Invoice**.
 - 🔄 Retry after failure → bump up one tier (smarter model might succeed)
 - 🧩 Complex exception (duplicate, amount variance) → bump up one tier
 
-**Example**: A $500 invoice with perfect PO match uses Tier A ($0.0001). A $15,000 invoice with 10% variance uses Tier C ($0.01).
+**Example**: A $500 invoice with perfect PO match uses Tier A (~$0.0001-0.0005). A $15,000 invoice with 10% variance uses Tier C (~$0.01-0.03).
 
 ### 🔗 2-Way & 3-Way Matching
 
@@ -181,15 +202,17 @@ Receipt: 100 widgets received        ✅ 3-way match complete
 - Excludes exceptions that need human review anyway
 - Shows true automation efficiency
 
-**Example Dashboard**:
+**Example Dashboard** (with real LLM integration):
 ```
-Total Cost:              $0.23
+Total Cost:              ~$0.20-0.50
 Total Invoices:          10
-Cost per Invoice:        $0.023
-Cost per Verified:       $0.038  (6 approved out of 10)
+Cost per Invoice:        ~$0.02-0.05
+Cost per Verified:       ~$0.03-0.08  (6 approved out of 10)
 Touchless Rate:          60%
 Cache Hit Rate:          33%
 ```
+
+> **Note:** This MVP uses MockLLM for demonstration. Costs shown are estimates based on real-world OpenAI pricing.
 
 ### 🗄️ Semantic Caching
 
@@ -204,7 +227,7 @@ Cache Hit Rate:          33%
 **Example**: 
 - Invoice 1: $1,000 from Acme, PO-001 → AI call → Cache
 - Invoice 2: $1,000 from Acme, PO-001 → Cache hit! (free)
-- Savings: $0.001 per cache hit
+- Savings: ~$0.001-0.01 per cache hit (depending on tier)
 
 ## Quick Start
 
@@ -255,9 +278,9 @@ The demo processes 10 invoices with different scenarios:
    Touchless (Approved):  6 (60%)
    Exceptions:            4 (40%)
 
-💰 Cost Metrics
-   Total LLM Cost:        $0.23
-   Avg Cost per Invoice:  $0.023
+💰 Cost Metrics (MockLLM - estimates only)
+   Total LLM Cost:        ~$0.20-0.50 (with real LLM)
+   Avg Cost per Invoice:  ~$0.02-0.05
    Cache Hit Rate:        33%
 
 ⚠️  Exception Breakdown
@@ -266,6 +289,8 @@ The demo processes 10 invoices with different scenarios:
    amount_variance        1
    vendor_mismatch        1
 ```
+
+> **Note:** This demo uses MockLLM with deterministic outputs. In production with real OpenAI/Anthropic integration, costs would vary based on actual token usage.
 
 ### Accessing the Application
 
