@@ -1,24 +1,45 @@
 """
 Tests for the LLM Router.
+
+These tests use mocked database sessions to test routing logic in isolation.
 """
 
 import pytest
 from decimal import Decimal
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 from apps.api.models.cost import ModelTier
 from apps.api.models.exception import ExceptionCategory
 from apps.api.services.llm_router import LLMRouter, RouterContext, EscalationReason
-from apps.api.tests.conftest import TEST_TENANT_ID
+
+TEST_TENANT_ID = uuid4()
+
+
+def create_mock_db(spend_amount=0):
+    """Create a mock database session that properly handles async."""
+    db = MagicMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one.return_value = spend_amount
+    
+    async def mock_execute(*args, **kwargs):
+        return mock_result
+    
+    db.execute = mock_execute
+    return db
 
 
 class TestTierSelection:
     """Tests for tier selection based on confidence."""
     
+    @pytest.fixture
+    def router(self):
+        """Create router with mocked DB."""
+        return LLMRouter(create_mock_db(0), TEST_TENANT_ID)
+    
     @pytest.mark.asyncio
-    async def test_high_confidence_selects_tier_a(self, db_session):
+    async def test_high_confidence_selects_tier_a(self, router):
         """Test that high confidence (>90%) selects Tier A."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.95,
@@ -31,9 +52,8 @@ class TestTierSelection:
         assert not decision.is_capped
     
     @pytest.mark.asyncio
-    async def test_medium_confidence_selects_tier_b(self, db_session):
+    async def test_medium_confidence_selects_tier_b(self, router):
         """Test that medium confidence (70-90%) selects Tier B."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.80,
@@ -45,9 +65,8 @@ class TestTierSelection:
         assert decision.tier == ModelTier.TIER_B
     
     @pytest.mark.asyncio
-    async def test_low_confidence_selects_tier_c(self, db_session):
+    async def test_low_confidence_selects_tier_c(self, router):
         """Test that low confidence (<70%) selects Tier C."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.50,
@@ -62,10 +81,13 @@ class TestTierSelection:
 class TestMonetaryRiskEscalation:
     """Tests for monetary risk escalation."""
     
+    @pytest.fixture
+    def router(self):
+        return LLMRouter(create_mock_db(0), TEST_TENANT_ID)
+    
     @pytest.mark.asyncio
-    async def test_high_amount_escalates_tier(self, db_session):
+    async def test_high_amount_escalates_tier(self, router):
         """Test that high invoice amount escalates tier."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.95,  # Would be Tier A
@@ -80,9 +102,8 @@ class TestMonetaryRiskEscalation:
         assert decision.original_tier == ModelTier.TIER_A
     
     @pytest.mark.asyncio
-    async def test_low_amount_no_escalation(self, db_session):
+    async def test_low_amount_no_escalation(self, router):
         """Test that low invoice amount doesn't escalate."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.95,
@@ -98,10 +119,13 @@ class TestMonetaryRiskEscalation:
 class TestComplexExceptionEscalation:
     """Tests for complex exception type escalation."""
     
+    @pytest.fixture
+    def router(self):
+        return LLMRouter(create_mock_db(0), TEST_TENANT_ID)
+    
     @pytest.mark.asyncio
-    async def test_amount_variance_escalates(self, db_session):
+    async def test_amount_variance_escalates(self, router):
         """Test that amount variance exception escalates tier."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.95,
@@ -115,9 +139,8 @@ class TestComplexExceptionEscalation:
         assert decision.escalation_reason == EscalationReason.COMPLEX_EXCEPTION
     
     @pytest.mark.asyncio
-    async def test_duplicate_exception_escalates(self, db_session):
+    async def test_duplicate_exception_escalates(self, router):
         """Test that duplicate exception escalates tier."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.95,
@@ -131,9 +154,8 @@ class TestComplexExceptionEscalation:
         assert decision.escalation_reason == EscalationReason.COMPLEX_EXCEPTION
     
     @pytest.mark.asyncio
-    async def test_simple_exception_no_escalation(self, db_session):
+    async def test_simple_exception_no_escalation(self, router):
         """Test that simple exception doesn't escalate."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.95,
@@ -149,10 +171,13 @@ class TestComplexExceptionEscalation:
 class TestRetryEscalation:
     """Tests for retry escalation."""
     
+    @pytest.fixture
+    def router(self):
+        return LLMRouter(create_mock_db(0), TEST_TENANT_ID)
+    
     @pytest.mark.asyncio
-    async def test_retry_escalates_from_tier_a(self, db_session):
+    async def test_retry_escalates_from_tier_a(self, router):
         """Test that retry escalates from Tier A to B."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.95,
@@ -166,9 +191,8 @@ class TestRetryEscalation:
         assert decision.escalation_reason == EscalationReason.RETRY
     
     @pytest.mark.asyncio
-    async def test_retry_escalates_from_tier_b(self, db_session):
+    async def test_retry_escalates_from_tier_b(self, router):
         """Test that retry escalates from Tier B to C."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.80,
@@ -182,9 +206,8 @@ class TestRetryEscalation:
         assert decision.escalation_reason == EscalationReason.RETRY
     
     @pytest.mark.asyncio
-    async def test_retry_caps_at_tier_c(self, db_session):
+    async def test_retry_caps_at_tier_c(self, router):
         """Test that retry can't escalate beyond Tier C."""
-        router = LLMRouter(db_session, TEST_TENANT_ID)
         context = RouterContext(
             tenant_id=TEST_TENANT_ID,
             confidence_score=0.50,
@@ -195,3 +218,22 @@ class TestRetryEscalation:
         decision = await router.route(context)
         
         assert decision.tier == ModelTier.TIER_C
+
+
+class TestSpendCap:
+    """Tests for spend cap enforcement."""
+    
+    @pytest.mark.asyncio
+    async def test_spend_cap_enforces_tier_a(self):
+        """When spend cap is reached, should use Tier A."""
+        router = LLMRouter(create_mock_db(100), TEST_TENANT_ID)  # At $100 cap
+        context = RouterContext(
+            tenant_id=TEST_TENANT_ID,
+            confidence_score=0.50,  # Would normally be Tier C
+            invoice_amount=Decimal("100.00"),
+        )
+        
+        decision = await router.route(context)
+        
+        assert decision.tier == ModelTier.TIER_A
+        assert decision.is_capped
