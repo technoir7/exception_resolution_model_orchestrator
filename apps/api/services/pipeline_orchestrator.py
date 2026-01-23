@@ -33,20 +33,32 @@ class PipelineOrchestrator:
     POLICY_VERSION = "v1"
     PROMPT_VERSION = "v1"
     
-    def __init__(self, db: AsyncSession, tenant_id: UUID):
+    def __init__(
+        self,
+        db: AsyncSession,
+        tenant_id: UUID,
+        rules_engine: Optional[RulesEngine] = None,
+        matching_engine: Optional[MatchingEngine] = None,
+        llm_router: Optional[LLMRouter] = None,
+        verification_service: Optional[VerificationService] = None,
+        exception_handler: Optional[ExceptionHandler] = None,
+        audit_service: Optional[AuditService] = None,
+        cost_service: Optional[CostService] = None,
+        cache_service: Optional[CacheService] = None,
+    ):
         self.db = db
         self.tenant_id = tenant_id
         self.logger = logger.bind(tenant_id=str(tenant_id))
         
-        # Initialize services
-        self.rules_engine = RulesEngine(db, tenant_id)
-        self.matching_engine = MatchingEngine(db, tenant_id)
-        self.llm_router = LLMRouter(db, tenant_id)
-        self.verification = VerificationService(tenant_id)
-        self.exception_handler = ExceptionHandler(db, tenant_id)
-        self.audit_service = AuditService(db, tenant_id)
-        self.cost_service = CostService(db, tenant_id)
-        self.cache_service = CacheService(db, tenant_id)
+        # Initialize services or use injected ones
+        self.rules_engine = rules_engine or RulesEngine(db, tenant_id)
+        self.matching_engine = matching_engine or MatchingEngine(db, tenant_id)
+        self.llm_router = llm_router or LLMRouter(db, tenant_id)
+        self.verification = verification_service or VerificationService(tenant_id)
+        self.exception_handler = exception_handler or ExceptionHandler(db, tenant_id)
+        self.audit_service = audit_service or AuditService(db, tenant_id)
+        self.cost_service = cost_service or CostService(db, tenant_id)
+        self.cache_service = cache_service or CacheService(db, tenant_id)
     
     async def run(
         self,

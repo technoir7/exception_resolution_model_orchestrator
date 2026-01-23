@@ -76,6 +76,27 @@ class CostService:
         
         self.db.add(event)
         return event
+
+    async def record_manual_review_cost(
+        self,
+        invoice_id: UUID,
+        pipeline_run_id: Optional[UUID] = None,
+        cost_usd: Decimal = Decimal("5.00"),
+        reviewer_id: Optional[UUID] = None,
+    ) -> CostEvent:
+        """Record a manual review cost event."""
+        event = CostEvent(
+            tenant_id=self.tenant_id,
+            invoice_id=invoice_id,
+            pipeline_run_id=pipeline_run_id,
+            event_type=CostEventType.MANUAL_REVIEW,
+            cost_usd=cost_usd,
+            event_timestamp=datetime.utcnow(),
+            event_metadata={"reviewer_id": str(reviewer_id)} if reviewer_id else None,
+        )
+        
+        self.db.add(event)
+        return event
     
     async def get_cost_per_invoice(self, invoice_id: UUID) -> Decimal:
         """Get total cost for a specific invoice."""

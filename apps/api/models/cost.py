@@ -20,6 +20,7 @@ class CostEventType(str, Enum):
     LLM_CALL = "llm_call"
     CACHE_HIT = "cache_hit"
     BATCH_PROCESSING = "batch_processing"
+    MANUAL_REVIEW = "manual_review"
 
 
 class ModelTier(str, Enum):
