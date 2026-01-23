@@ -23,6 +23,7 @@ class AuditStep(str, Enum):
     MATCHING = "matching"
     LLM_ROUTING = "llm_routing"
     LLM_CALL = "llm_call"
+    SHADOW_ROUTING = "shadow_routing"
     VERIFICATION = "verification"
     EXCEPTION_CREATED = "exception_created"
     EXCEPTION_RESOLVED = "exception_resolved"

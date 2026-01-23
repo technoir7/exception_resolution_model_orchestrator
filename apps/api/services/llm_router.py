@@ -54,6 +54,7 @@ class RouterContext:
     confidence_score: float = 0.0
     retry_count: int = 0
     previous_tier: Optional[ModelTier] = None
+    prompt_strategy: str = "standard"  # "standard" or "optimistic"
 
 
 class LLMRouter:
@@ -113,7 +114,14 @@ class LLMRouter:
         if context.retry_count > 0 and context.previous_tier:
             return self._escalate_tier(context, spend_remaining)
         
-        tier = self._select_tier_by_confidence(context.confidence_score)
+        # Select tier based on confidence or strategy
+        if context.prompt_strategy == "optimistic":
+            # In optimistic mode, prefer Tier A unless forced otherwise (e.g. amount risk)
+            # We still respect high risk thresholds, but lower the matching confidence bar
+            tier = ModelTier.TIER_A
+        else:
+            tier = self._select_tier_by_confidence(context.confidence_score)
+            
         escalation_reason = None
         original_tier = None
         
@@ -130,7 +138,7 @@ class LLMRouter:
         return RouterDecision(
             tier=tier,
             model_id=self._get_model_id(tier),
-            reasoning=f"Selected {tier.value}: conf={context.confidence_score:.2f}",
+            reasoning=f"Selected {tier.value}: conf={context.confidence_score:.2f}, strategy={context.prompt_strategy}",
             escalation_reason=escalation_reason,
             original_tier=original_tier,
             spend_remaining=spend_remaining,

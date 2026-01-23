@@ -44,6 +44,7 @@ apps/api/services/llm_provider.py
 apps/api/services/llm_router.py
 apps/api/services/matching_engine.py
 apps/api/services/pipeline_orchestrator.py
+apps/api/services/replay.py
 apps/api/services/rules_engine.py
 apps/api/services/verification.py
 apps/api/tasks/__init__.py
