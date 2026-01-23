@@ -127,6 +127,23 @@ We track **spend per successful outcome**, not just total spend.
 
 **Example**: A $500 invoice with perfect PO match uses Tier A (~$0.0001-0.0005). A $15,000 invoice with 10% variance uses Tier C (~$0.01-0.03).
 
+### 🔄 Hybrid Routing (Optimistic Strategy)
+
+**What it does**: "Cheap to propose, expensive to verify."
+
+Instead of statically routing based on confidence, the system now:
+1. **Optimistically** tries Tier A (Cheap) first for most invoices.
+2. If Tier A output has low confidence (< 0.85) or flags a "Review", it **auto-escalates** to Tier C (Expensive).
+3. **Result**: You pay Tier A prices for 80% of volume, and only pay Tier C when actually needed.
+
+### 👥 Shadow Mode
+
+**What it does**: safely tests new routing policies in production.
+
+- The system can run a "Shadow Router" alongside the main one.
+- Shadow decisions are logged to the audit trail (`SHADOW_ROUTING`) but do not affect the live invoice.
+- Allows you to validatate "What would happen if I changed the threshold to 0.7?" without risk.
+
 ### 🔗 2-Way & 3-Way Matching
 
 **What it does**: Compares invoice against purchase orders and receipts.
@@ -185,6 +202,26 @@ Receipt: 100 widgets received        ✅ 3-way match complete
 - Policy updated (Jan 15): New tolerance rules
 - Replay (Jan 20): Would now be flagged as exception
 - **Drift detected**: Shows policy change impact
+
+### 🔁 Replay Harness (Offline Simulation)
+
+**What it does**: Simulates pipeline runs against huge historical datasets to measure "Cost vs Accuracy" impact of policy changes.
+
+**How to run**:
+```bash
+# 1. Seed benchmark data
+make seed
+
+# 2. Run comparison (Baseline vs Hybrid)
+python scripts/run_replay.py
+```
+
+**Output**:
+```
+Hybrid: Cost=$0.45, Approved=48/50
+Baseline: Cost=$2.10, Approved=49/50
+Savings: 78% | Accuracy Delta: -2%
+```
 
 ### 💵 Cost Dashboard
 
