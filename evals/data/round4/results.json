@@ -1,83 +1,43 @@
 {
  "reading": {
   "invoices": 200,
-  "read_exactly": 165,
-  "unreadable": 35,
+  "read_exactly": 200,
+  "unreadable": 0,
   "field_errors": {},
   "examples": [],
-  "refused_at_intake": {
-   "c005": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c008": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c011": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c014": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c023": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c029": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c032": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c038": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c053": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c056": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c074": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c080": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c086": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c089": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c092": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c095": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c098": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c101": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c104": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c107": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c113": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c116": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c119": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c122": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c128": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c134": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c155": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c158": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c161": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c167": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c173": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c182": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c185": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c194": "UnreadableInvoice: no invoice could be read in 2 tries",
-   "c200": "UnreadableInvoice: no invoice could be read in 2 tries"
-  }
+  "refused_at_intake": {}
  },
  "rules only": {
   "invoices": 200,
-  "wrong_payments": 47,
-  "wrong_payment_dollars": "132055.67",
+  "wrong_payments": 58,
+  "wrong_payment_dollars": "162302.63",
   "wrong_payment_kinds": {
-   "one_over": 9,
-   "unverified_bank_change": 8,
-   "math_error": 9,
-   "small_price_increase": 10,
-   "duplicate_reworded": 11
+   "one_over": 12,
+   "math_error": 12,
+   "unverified_bank_change": 10,
+   "small_price_increase": 12,
+   "duplicate_reworded": 12
   },
-  "to_a_person": 96,
-  "needless_reviews": 63,
+  "to_a_person": 69,
+  "needless_reviews": 47,
   "model_calls": 250,
   "model_cost_usd": "0.2219",
   "model_cost_per_invoice_usd": "0.00111",
   "by_kind": {
    "clean": {
-    "paid": 48,
-    "person": 15
+    "paid": 63
    },
    "duplicate_reworded": {
-    "paid": 11,
-    "person": 1
+    "paid": 12
    },
    "freight_at_cap": {
     "person": 10
    },
    "math_error": {
-    "person": 3,
-    "paid": 9
+    "paid": 12
    },
    "one_over": {
-    "paid": 9,
-    "person": 3
+    "paid": 12
    },
    "partial_freight_over_cap": {
     "person": 10
@@ -95,85 +55,73 @@
     "person": 15
    },
    "small_price_increase": {
-    "paid": 10,
-    "person": 2
+    "paid": 12
    },
    "unverified_bank_change": {
-    "paid": 8,
-    "person": 2
+    "paid": 10
    },
    "verified_bank_change": {
-    "paid": 9,
-    "person": 1
+    "paid": 10
    }
   }
  },
  "haiku on flagged": {
   "invoices": 200,
-  "wrong_payments": 47,
-  "wrong_payment_dollars": "132055.67",
+  "wrong_payments": 58,
+  "wrong_payment_dollars": "162302.63",
   "wrong_payment_kinds": {
-   "one_over": 9,
-   "unverified_bank_change": 8,
-   "math_error": 9,
-   "small_price_increase": 10,
-   "duplicate_reworded": 11
+   "one_over": 12,
+   "math_error": 12,
+   "unverified_bank_change": 10,
+   "small_price_increase": 12,
+   "duplicate_reworded": 12
   },
-  "to_a_person": 58,
-  "needless_reviews": 25,
-  "model_calls": 311,
-  "model_cost_usd": "0.2645",
-  "model_cost_per_invoice_usd": "0.00132",
+  "to_a_person": 25,
+  "needless_reviews": 3,
+  "model_calls": 319,
+  "model_cost_usd": "0.2701",
+  "model_cost_per_invoice_usd": "0.00135",
   "by_kind": {
    "clean": {
-    "paid": 48,
-    "person": 15
+    "paid": 63
    },
    "duplicate_reworded": {
-    "paid": 11,
-    "person": 1
+    "paid": 12
    },
    "freight_at_cap": {
-    "person": 2,
-    "paid": 8
-   },
-   "math_error": {
-    "person": 3,
+    "person": 1,
     "paid": 9
    },
+   "math_error": {
+    "paid": 12
+   },
    "one_over": {
-    "paid": 9,
-    "person": 3
+    "paid": 12
    },
    "partial_freight_over_cap": {
     "person": 10
    },
    "partial_tax": {
-    "paid": 9,
-    "person": 1
+    "paid": 10
    },
    "repeat_not_received": {
     "person": 12
    },
    "repeat_shipment": {
-    "paid": 9,
-    "person": 3
-   },
-   "reworded_lines": {
-    "paid": 12,
-    "person": 3
-   },
-   "small_price_increase": {
     "paid": 10,
     "person": 2
    },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "paid": 12
+   },
    "unverified_bank_change": {
-    "paid": 8,
-    "person": 2
+    "paid": 10
    },
    "verified_bank_change": {
-    "paid": 9,
-    "person": 1
+    "paid": 10
    }
   }
  },
@@ -182,22 +130,22 @@
   "wrong_payments": 0,
   "wrong_payment_dollars": "0",
   "wrong_payment_kinds": {},
-  "to_a_person": 106,
-  "needless_reviews": 26,
-  "model_calls": 415,
-  "model_cost_usd": "0.3248",
-  "model_cost_per_invoice_usd": "0.00162",
+  "to_a_person": 84,
+  "needless_reviews": 4,
+  "model_calls": 450,
+  "model_cost_usd": "0.3457",
+  "model_cost_per_invoice_usd": "0.00173",
   "by_kind": {
    "clean": {
-    "paid": 47,
-    "person": 16
+    "paid": 62,
+    "person": 1
    },
    "duplicate_reworded": {
     "person": 12
    },
    "freight_at_cap": {
-    "person": 2,
-    "paid": 8
+    "person": 1,
+    "paid": 9
    },
    "math_error": {
     "person": 12
@@ -209,19 +157,17 @@
     "person": 10
    },
    "partial_tax": {
-    "paid": 9,
-    "person": 1
+    "paid": 10
    },
    "repeat_not_received": {
     "person": 12
    },
    "repeat_shipment": {
-    "paid": 9,
-    "person": 3
+    "paid": 10,
+    "person": 2
    },
    "reworded_lines": {
-    "paid": 12,
-    "person": 3
+    "paid": 15
    },
    "small_price_increase": {
     "person": 12
@@ -230,8 +176,7 @@
     "person": 10
    },
    "verified_bank_change": {
-    "paid": 9,
-    "person": 1
+    "paid": 10
    }
   }
  }

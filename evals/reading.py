@@ -110,7 +110,9 @@ def _plain(text: Optional[str]) -> str:
 
 
 def _differences(printed: extraction.ExtractedInvoice, read: extraction.ExtractedInvoice):
-    for field in ("invoice_number", "vendor_name", "vendor_tax_id", "po_number", "currency", "notes"):
+    if (printed.currency or extraction.HOME_CURRENCY) != (read.currency or extraction.HOME_CURRENCY):
+        yield "currency", printed.currency, read.currency
+    for field in ("invoice_number", "vendor_name", "vendor_tax_id", "po_number", "notes"):
         if _plain(getattr(printed, field)) != _plain(getattr(read, field)):
             yield field, getattr(printed, field), getattr(read, field)
     for field in ("invoice_date", "due_date", "service_period", "subtotal", "tax_amount", "total_amount"):

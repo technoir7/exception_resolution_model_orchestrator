@@ -1,0 +1,52 @@
+{
+ "c015/round3": [
+  "pay",
+  "pay",
+  "hold"
+ ],
+ "c165/round3": [
+  "pay",
+  "pay",
+  "pay"
+ ],
+ "c104/round3": [
+  "hold",
+  "hold",
+  "pay"
+ ],
+ "c105/round3": [
+  "pay",
+  "hold",
+  "pay"
+ ],
+ "c107/round3": [
+  "pay",
+  "pay",
+  "pay"
+ ],
+ "c015/round4": [
+  "pay",
+  "hold",
+  "hold"
+ ],
+ "c165/round4": [
+  "pay",
+  "pay",
+  "pay"
+ ],
+ "c104/round4": [
+  "hold",
+  "hold",
+  "pay"
+ ],
+ "c105/round4": [
+  "pay",
+  "pay",
+  "pay"
+ ],
+ "c107/round4": [
+  "hold",
+  "pay",
+  "pay"
+ ]
+}

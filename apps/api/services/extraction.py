@@ -19,6 +19,10 @@ from pydantic import BaseModel, ValidationError
 
 from apps.api.schemas.invoice import InvoiceCanonical, LineItem, RemitTo
 
+# Many domestic invoices print no currency, only "$" or nothing; they are in
+# the buyer's own.
+HOME_CURRENCY = "USD"
+
 
 class PrintedLine(BaseModel):
     description: str
@@ -36,7 +40,7 @@ class ExtractedInvoice(BaseModel):
     vendor_name: str
     vendor_tax_id: Optional[str] = None
     po_number: Optional[str] = None
-    currency: str = "USD"
+    currency: Optional[str] = None
     line_items: List[PrintedLine]
     subtotal: Decimal
     tax_amount: Decimal = Decimal("0")
@@ -91,7 +95,7 @@ def to_canonical(read: ExtractedInvoice, vendor_id: str) -> InvoiceCanonical:
         vendor_id=vendor_id,
         vendor_name=read.vendor_name,
         po_number=read.po_number,
-        currency=read.currency,
+        currency=read.currency or HOME_CURRENCY,
         subtotal=read.subtotal,
         tax_amount=read.tax_amount,
         total_amount=read.total_amount,

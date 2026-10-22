@@ -4,17 +4,24 @@ Known gaps, roughly in order of what would matter most to a real deployment.
 
 ## Harder benchmark cases
 
-Round 3 added errors the rules cannot see and look-alike pairs, and Haiku
-still paid nothing wrongly, so the benchmark has not yet found where it fails.
-Next: invoices with several problems at once, documents read from PDFs, and
-holds escalated to a stronger model when the cheap one is unsure (Haiku's one
-unsure hold in round 3 would have gone to Opus).
+Round 3 added errors the rules cannot see and look-alike pairs, and round 4
+the same invoices as PDFs; Haiku still paid nothing wrongly, so the benchmark
+has not yet found where it fails. Next: invoices with several problems at
+once, and holds escalated to a stronger model when the cheap one is unsure.
+Haiku's needless holds vary from run to run, so a measure of them should
+average several runs.
 
-## Reading invoice PDFs
+## Scanned and multi-page invoices
 
-Invoices arrive as structured JSON. Real ones arrive as PDFs and scans, which
-would need extraction before the rules and the review, and a measure of how
-often extraction errors turn into wrong payments.
+The reader is measured only on clean, generated, one-page PDFs, all read
+exactly. Scans, photographs, handwriting and invoices running over several
+pages would test it, and whether a misread field turns into a wrong payment.
+
+## Numbers as the reader writes them
+
+The reader gives 1552.4 where an invoice prints 1552.40, and the review sees
+it so. Round 4 found no effect, but writing amounts to the cent would keep the
+review's view the same whichever way an invoice arrives.
 
 ## Invoices across several POs
 

@@ -1,16 +1,18 @@
 # AP Reconciliation Orchestrator
 
-Checks supplier invoices before they are paid. Fixed rules compare each invoice
-with its purchase order, goods receipt and the vendor's history; a Claude model
-then reads the documents and says pay or hold; a hold goes to a person, never
+Checks supplier invoices before they are paid. An invoice arrives as data or
+as a PDF, which Claude reads. Fixed rules compare each invoice with its
+purchase order, goods receipt and the vendor's history; a Claude model then
+reads the documents and says pay or hold; a hold goes to a person, never
 straight to payment or rejection. Every step is logged, and every model call is
 recorded at what it cost.
 
 ## Result
 
 Measured on 600 invoices with known right answers, in three rounds of 200,
-each planned in writing before any model saw it ([method and data](evals/README.md)).
-The hardest round, with errors the rules cannot see:
+each planned in writing before any model saw it, and then on the hardest
+round's invoices again as PDFs ([method and data](evals/README.md)). The
+hardest round, with errors the rules cannot see:
 
 | How invoices are processed | Wrong payments | Sent to a person | Of which payable | Model cost per invoice |
 |---|---:|---:|---:|---:|
@@ -32,6 +34,13 @@ The hardest round, with errors the rules cannot see:
   their cost: $0.62 per thousand invoices. Asked to check 93 of Haiku's pays
   (large or less confident ones) across the three rounds, Opus changed none,
   so that check is off by default.
+- **Reading the invoices from PDFs lost nothing.** Printed in three layouts
+  that write dates, money and bank accounts differently, all 200 were read
+  exactly by Haiku, including lines that do not add up, which it copied
+  rather than corrected. (The round first found a bug in the app: it refused
+  invoices that print no currency.) Reviewed as before, none was paid
+  wrongly and 4 payable ones went to a person. Reading and reviewing together
+  cost $1.73 per thousand invoices.
 - **Against the rules alone, payable invoices stopped waiting for a person.**
   The rules flag partial deliveries, sales tax on a pre-tax PO, freight within
   its cap and invoices worded differently from the PO; 47 payable invoices
@@ -40,16 +49,21 @@ The hardest round, with errors the rules cannot see:
 The two easier rounds came out the same, with every model correct on every
 invoice it read. The invoices are synthetic, built with their answers fixed,
 and independent reviewers checked samples of the answers (all 164 they
-checked were right). The documents are clean structured data with one
-problem per invoice, so these results show the cheap model is enough for
-documents like these; invoices read from PDFs, or with several problems at
-once, would be harder.
+checked were right). They are clean documents with one problem each, and the
+PDFs are generated, not scanned, so these results show the cheap model is
+enough for documents like these; scans, or invoices with several problems at
+once, would be harder. Haiku's few needless holds vary from run to run: asked
+again, it pays some and holds others on the same borderline invoices.
 
 Until this measurement the model was a stand-in that returned canned answers,
 and the cost figures were estimates; both are now real.
 
 ## How it works
 
+0. **Intake** (`intake.py`, `extraction.py`): an invoice comes as data, or as
+   a PDF that Haiku is given whole and told to copy exactly, correcting
+   nothing. The vendor is matched on file by the tax ID printed; a known name
+   beside an unknown tax ID is refused, as an impostor's invoice would be.
 1. **Rules** (`apps/api/services/rules_engine.py`): required fields, dates,
    exact and fuzzy duplicates, the PO exists and is open, amount and quantity
    within tolerance of the PO, and the vendor matches the PO's.
@@ -81,7 +95,7 @@ no Docker and no model calls for the tests.
 
 ```bash
 uv venv && uv pip install -e ".[dev]"
-.venv/bin/python -m pytest apps/api/tests evals/tests      # 122 tests, on SQLite
+.venv/bin/python -m pytest apps/api/tests evals/tests      # 373 tests, on SQLite
 ```
 
 The benchmark needs the `claude` command, logged in:
@@ -89,6 +103,8 @@ The benchmark needs the `claude` command, logged in:
 ```bash
 .venv/bin/python -m evals.collect --round 3 --model haiku   # one model's answers
 .venv/bin/python -m evals.score --round 3                   # every arm it can score
+.venv/bin/python -m evals.reading --round 4                 # Haiku reads round 3's invoices as PDFs
+.venv/bin/python -m evals.render --round 4 --out pdfs/      # the PDFs, to look at
 ```
 
 The full app (Postgres, Redis, the API, a worker and a Next.js dashboard) runs
@@ -101,9 +117,10 @@ make demo    # process the sample invoices
 ```
 
 The `claude` command is not in the Docker image, so there the review is off
-(`REVIEW_WITH_MODELS=false`) and the rules decide alone. That shows their
-weakness: all ten sample invoices are flagged, the clean ones because their
-sales tax takes them over the pre-tax PO total, so all ten go to a person.
+(`REVIEW_WITH_MODELS=false`), PDFs are refused, and the rules decide alone.
+That shows their weakness: all ten sample invoices are flagged, the clean ones
+because their sales tax takes them over the pre-tax PO total, so all ten go to
+a person.
 
 To have Claude review them, run the demo and the API on your machine, against
 the database in Docker: `.venv/bin/python scripts/demo.py` and `make dev-api`.
@@ -133,6 +150,7 @@ Demo logins: `controller`, `ap_manager` and `bpo_operator`, password `demo123`.
 Interactive docs at `/docs`. The main endpoints:
 
 - `POST /ingest/invoice`: submit an invoice as JSON
+- `POST /ingest/invoice-pdf`: submit an invoice PDF as the request body, for Claude to read
 - `POST /pipeline/run/{invoice_id}`: process it
 - `GET /invoices`, `GET /exceptions`: lists, filterable by status, category and severity
 - `POST /exceptions/{id}/resolve`: a person's decision on a held invoice
@@ -142,7 +160,8 @@ Interactive docs at `/docs`. The main endpoints:
 
 ## Limitations
 
-- Invoices arrive as structured JSON; reading PDFs is not built.
+- PDF reading is measured only on clean, generated, one-page invoices, not
+  on scans or photographs.
 - An invoice billing several POs, or part of a consolidated one, is not
   matched (see `BACKLOG.md`); it goes to the review, which reads it as it is.
 - The fuzzy duplicate check only looks a week either side, which is why late

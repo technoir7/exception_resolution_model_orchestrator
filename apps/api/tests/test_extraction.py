@@ -220,3 +220,14 @@ class TestTheEndpoint:
         from apps.api.config import settings
         monkeypatch.setattr(settings, "review_with_models", False)
         assert (await post(PDF)).status_code == 503
+
+
+class TestCurrency:
+    def test_an_invoice_that_prints_none_is_in_the_buyers_own(self):
+        """One of round 4's layouts prints no currency, as many domestic
+        invoices do, and the reader rightly reports none."""
+        invoice = extraction.to_canonical(read(currency=None), vendor_id="V0001")
+        assert invoice.currency == "USD"
+
+    def test_a_printed_currency_is_kept(self):
+        assert extraction.to_canonical(read(currency="CAD"), vendor_id="V0001").currency == "CAD"

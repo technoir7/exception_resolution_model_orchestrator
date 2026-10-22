@@ -325,3 +325,56 @@ change would be measured on a new round with new cases.
 
 Not tested: scanned or photographed invoices, multi-page invoices, and
 invoices from vendors not on file.
+
+### Round 4 results
+
+**As run, a bug of mine refused 35 invoices.** The terse layout prints no
+currency, and the reader rightly answered null, as told to for anything not
+printed; the app's parser required a currency, so it treated the reply as
+unreadable, asked again, and refused the 35 of those 50 invoices that got
+null both times. Every reading that parsed was exact. Those 35 would have gone
+to a person (106 in all, 26 of them payable) with no wrong payment. The
+round as run is kept in `results-as-run.json` and `prompts-as-run.jsonl`.
+
+The fix is in the app, not the reader's instruction: an invoice that prints no
+currency is taken to be in the buyer's own, as many domestic invoices are. The
+recorded readings were replayed through the fixed intake, with no new reading
+calls. 164 of the 165 prompts already reviewed came out the same; the other
+(c140) now used the reader's first reply rather than its second, which
+differed only in writing the tax as 0.0 rather than 0, and was reviewed again.
+The 35 newly accepted invoices were reviewed for the first time.
+
+| Arm | Wrong payments | Paid wrongly | To a person | Needless reviews | Model cost per invoice |
+|---|---:|---:|---:|---:|---:|
+| rules only | 58 | $162,302.63 | 69 | 47 | $0.00111 |
+| haiku on flagged | 58 | $162,302.63 | 25 | 3 | $0.00135 |
+| haiku on everything | 0 | $0 | 84 | 4 | $0.00173 |
+
+Cost per invoice now includes reading the PDF, about $0.0011 as recorded and
+$0.0010 without the retries the bug caused.
+
+1. **All 200 invoices were read exactly as printed**: every field, on every
+   layout. The 12 lines that do not add up were copied as printed, not
+   corrected, and the 12 reworded resubmissions kept their wording.
+2. **Reading let no invoice be paid wrongly.** Haiku reviewing every invoice
+   held all 80 that should be held, as in round 3.
+3. **Payable invoices sent to a person: 4, against round 3's 2**, and not the
+   same ones: c015 (freight at its cap, which Haiku read as possibly not "at
+   actual cost"), c165 (a weak duplicate suspicion, at 0.6 confidence), and
+   c104 and c107 (each the second of two shipments, taken for a duplicate).
+   Round 3's c105 was paid this time. The invoices as read differ from
+   round 3's only in how numbers are written: the reader gives 1552.4 where
+   the data said 1552.40. To tell that from chance, Haiku was asked again
+   three times on each of these five invoices, with round 3's prompt and with
+   round 4's (`repeats-haiku.json`): it held 4 of 15 times with round 3's and
+   5 of 15 with round 4's, flipping on the same invoices with either. So the
+   difference is Haiku's run-to-run variation on borderline payable invoices,
+   not reading. It is also a measure of that variation: any single run's count
+   of needless reviews could be a couple higher or lower.
+4. **Reading and reviewing cost $0.00173 an invoice**, about $1.70 per thousand
+   (reading $1.10, the review $0.62). A PDF is about 2,900 tokens to the reader,
+   and a reading took about 5 seconds.
+
+So for clean, generated PDFs, reading is not where invoices go wrong; the
+review's judgement on borderline payable invoices is. Scans, photographs and
+multi-page invoices would test the reader harder.
