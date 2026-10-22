@@ -197,3 +197,116 @@ async def test_the_rules_flag_exactly_the_kinds_meant_to_be_flagged(db_session):
         if bool(raised) != (case["kind"] in cases.FLAGGED):
             wrong.append((case["id"], case["kind"], raised))
     assert not wrong, wrong[:5]
+
+
+ROUND3 = cases.generate(seed=1, counts=cases.COUNTS_3)
+
+
+def of3(kind):
+    return [c for c in ROUND3 if c["kind"] == kind]
+
+
+def received(case):
+    """Everything received, by PO line, over every receipt."""
+    total = {}
+    for r in [case["receipt"], *case.get("extra_receipts", [])]:
+        for line in r["line_items"]:
+            total[line["line_number"]] = total.get(line["line_number"], 0) + line["quantity"]
+    return total
+
+
+class TestRound3:
+    def test_has_the_planned_number_of_each_kind(self):
+        assert Counter(c["kind"] for c in ROUND3) == cases.COUNTS_3
+
+    def test_every_answer_is_pay_or_hold(self):
+        for case in ROUND3:
+            assert case["truth"]["decision"] == ("pay" if case["kind"] in cases.PAY else "hold")
+
+    def test_lines_add_up_except_where_the_error_is_the_point(self):
+        for case in ROUND3:
+            for line in case["invoice"]["line_items"]:
+                ok = money(line["amount"]) == money(line["unit_price"]) * line["quantity"]
+                assert ok or case["kind"] == "math_error", case["id"]
+
+    def test_a_math_error_inflates_a_line(self):
+        for case in of3("math_error"):
+            assert any(money(l["amount"]) > money(l["unit_price"]) * l["quantity"] for l in case["invoice"]["line_items"])
+
+    def test_reworded_lines_bill_the_po_in_other_words_and_order(self):
+        for case in of3("reworded_lines"):
+            po = sorted((l["quantity"], l["unit_price"]) for l in case["po"]["line_items"])
+            assert sorted((l["quantity"], l["unit_price"]) for l in case["invoice"]["line_items"]) == po
+            descriptions = {l["description"] for l in case["po"]["line_items"]}
+            assert not descriptions & {l["description"] for l in case["invoice"]["line_items"]}
+
+    def test_freight_at_cap_is_exactly_the_cap(self):
+        for case in of3("freight_at_cap"):
+            assert freight(case) == money(case["po"]["freight"]["cap"])
+
+    def test_a_repeat_shipment_was_received_twice(self):
+        for case in of3("repeat_shipment"):
+            ordered = {l["line_number"]: l["quantity"] for l in case["po"]["line_items"]}
+            assert received(case) == ordered
+            assert len(case["history"]) >= 1
+
+    def test_a_repeat_not_received_bills_beyond_what_arrived(self):
+        for case in of3("repeat_not_received"):
+            got = received(case)
+            billed_before = sum(l["quantity"] for h in case["history"] if h["po_number"] == case["po"]["po_number"]
+                                for l in h["line_items"])
+            billed_now = sum(l["quantity"] for l in case["invoice"]["line_items"])
+            assert billed_before + billed_now > sum(got.values())
+
+    def test_one_over_bills_a_single_unit_more_than_arrived(self):
+        for case in of3("one_over"):
+            got = received(case)
+            extra = [l["quantity"] - got[l["line_number"]] for l in case["invoice"]["line_items"]]
+            assert sorted(extra)[-1] == 1 and sum(extra) == 1
+
+    def test_a_small_price_increase_is_under_one_percent(self):
+        for case in of3("small_price_increase"):
+            po_total, inv_total = money(case["po"]["total_amount"]), money(case["invoice"]["total_amount"])
+            assert po_total < inv_total < po_total * Decimal("1.01")
+
+    def test_a_verified_bank_change_is_on_the_vendor_record(self):
+        for case in of3("verified_bank_change"):
+            assert case["invoice"]["remit_to"] == case["vendor"]["remit_to"]
+            assert case["vendor"]["remit_updated_on"] < case["invoice"]["invoice_date"]
+
+    def test_an_unverified_bank_change_is_not(self):
+        for case in of3("unverified_bank_change"):
+            assert case["invoice"]["remit_to"] != case["vendor"]["remit_to"]
+
+    def test_partial_deliveries_bill_what_arrived(self):
+        for case in of3("partial_tax") + of3("partial_freight_over_cap"):
+            got = received(case)
+            assert all(l["quantity"] == got[l["line_number"]] for l in case["invoice"]["line_items"] if not l.get("is_freight"))
+
+    def test_partial_tax_is_at_the_po_rate_and_partial_freight_over_its_cap(self):
+        for case in of3("partial_tax"):
+            assert money(case["invoice"]["tax_amount"]) == (
+                money(case["invoice"]["subtotal"]) * money(case["po"]["tax_rate"])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        for case in of3("partial_freight_over_cap"):
+            assert freight(case) > money(case["po"]["freight"]["cap"])
+
+    def test_a_reworded_duplicate_repeats_a_paid_invoice_weeks_later(self):
+        for case in of3("duplicate_reworded"):
+            [paid] = [h for h in case["history"] if h["po_number"] == case["po"]["po_number"]]
+            assert paid["total_amount"] == case["invoice"]["total_amount"]
+            assert (date(case["invoice"]["invoice_date"]) - date(paid["invoice_date"])).days > 7
+
+
+@pytest.mark.asyncio
+async def test_round3_rules_flag_exactly_the_kinds_meant_to_be_flagged(db_session):
+    from evals import seed
+    from apps.api.services.flags import flags_for
+    from apps.api.tests.conftest import TEST_TENANT_ID
+
+    invoices = await seed.load(db_session, TEST_TENANT_ID, ROUND3)
+    wrong = []
+    for case in ROUND3:
+        raised = await flags_for(db_session, TEST_TENANT_ID, invoices[case["id"]], today=cases.AS_OF)
+        if bool(raised) != (case["kind"] in cases.FLAGGED):
+            wrong.append((case["id"], case["kind"], raised))
+    assert not wrong, wrong[:5]

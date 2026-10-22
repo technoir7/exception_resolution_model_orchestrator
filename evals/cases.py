@@ -23,6 +23,7 @@ vendors sell what their names say.
 """
 
 import random
+import re
 from datetime import date, timedelta
 from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 from typing import Dict, List
@@ -30,7 +31,8 @@ from typing import Dict, List
 AS_OF = date(2026, 10, 1)
 
 # Kinds whose right answer is to pay; every other kind should be held.
-PAY = {"clean", "partial_delivery", "freight_allowed", "tax_correct", "recurring_service", "unit_of_measure"}
+PAY = {"clean", "partial_delivery", "freight_allowed", "tax_correct", "recurring_service", "unit_of_measure",
+       "reworded_lines", "freight_at_cap", "repeat_shipment", "verified_bank_change", "partial_tax"}
 
 # Kinds the rules and the three-way match flag. The rest pass them, so only a
 # check that reads every invoice could catch the ones among them to hold.
@@ -38,6 +40,8 @@ FLAGGED = {
     "partial_delivery", "freight_allowed", "tax_correct", "recurring_service", "unit_of_measure",
     "price_increase", "overbilled_quantity", "duplicate", "freight_not_allowed", "tax_wrong",
     "vendor_mismatch",
+    "reworded_lines", "freight_at_cap", "repeat_shipment", "partial_tax", "partial_freight_over_cap",
+    "repeat_not_received",
 }
 
 # Exceptions are oversampled so each kind has enough cases to measure; results
@@ -59,6 +63,29 @@ COUNTS = {
     "vendor_mismatch": 6,
 }
 
+# Round 3: errors the rules cannot see, look-alike pairs with opposite
+# answers, and invoices worded and ordered differently from their POs.
+COUNTS_3 = {
+    "clean": 63,
+    "reworded_lines": 15,
+    "freight_at_cap": 10,
+    "repeat_shipment": 12,
+    "verified_bank_change": 10,
+    "partial_tax": 10,
+    "math_error": 12,
+    "one_over": 12,
+    "small_price_increase": 12,
+    "partial_freight_over_cap": 10,
+    "unverified_bank_change": 10,
+    "duplicate_reworded": 12,
+    "repeat_not_received": 12,
+}
+
+
+def counts_for(round_number: int) -> Dict[str, int]:
+    return COUNTS_3 if round_number >= 3 else COUNTS
+
+
 REASONS = {
     "clean": "matches the PO and the receipt",
     "partial_delivery": "bills the quantities received on a partial delivery",
@@ -74,6 +101,18 @@ REASONS = {
     "tax_wrong": "sales tax not at the PO's rate",
     "bank_change": "asks for payment to an account not on file",
     "vendor_mismatch": "billed by a vendor other than the PO's",
+    "reworded_lines": "the PO's lines in other words and another order",
+    "freight_at_cap": "freight exactly at the PO's cap",
+    "repeat_shipment": "the second of two shipments the PO asked for, both received",
+    "verified_bank_change": "the bank account the vendor record was updated to",
+    "partial_tax": "a partial delivery billed as received, with tax at the PO's rate",
+    "math_error": "a line's amount is more than its quantity times its price",
+    "one_over": "bills one unit more than was received",
+    "small_price_increase": "a unit price slightly above the PO's fixed price",
+    "partial_freight_over_cap": "a partial delivery with freight above the PO's cap",
+    "unverified_bank_change": "asks for payment to an account not on file",
+    "duplicate_reworded": "repeats an invoice already paid, reworded",
+    "repeat_not_received": "bills a second shipment that has not arrived",
 }
 
 CENT = Decimal("0.01")
@@ -364,6 +403,23 @@ def _resubmitted_number(number: str, rng: random.Random) -> str:
     return rng.choice(variants)
 
 
+ABBREVIATIONS = [
+    ("assembly", "ASSY"), ("pack of ", "PK/"), ("box of ", "BX/"), ("bundle of ", "BDL/"), ("case of ", "CS/"),
+    ("black", "BLK"), ("high yield", "HY"), ("stainless", "SS"), ("fixture", "FIXT"), ("cartridge", "CART"),
+    ("industrial", "IND"), ("circuit breaker", "CB"), ("single pole", "1P"), ("ergonomic", "ERGO"),
+    ("thermal", "THRM"), ("cordless", "CRDLS"), ("press-on", "PRESS ON"), ("anti-fog", "AF"),
+]
+
+
+def _reword(description: str, rng: random.Random) -> str:
+    """How a vendor's own system tends to describe what a PO ordered."""
+    text = description
+    for long, short in ABBREVIATIONS:
+        text = re.sub(re.escape(long), short, text, flags=re.I)
+    text = text.replace(",", "").upper()
+    return f"{rng.choice(['SKU', 'ITEM ', '#', 'P/N '])}{rng.randint(10000, 99999)} {text}"
+
+
 def _over(po_lines, at_least: Decimal, make) -> List[Dict]:
     """`make()` until the invoice total exceeds the PO's by at least `at_least`."""
     po_total = _subtotal(po_lines)
@@ -513,6 +569,137 @@ def _build(rng: random.Random, number: int, kind: str) -> Dict:
         invoice = b.invoice([dict(l) for l in lines], notes=b.note(""))
         case["po_vendor"] = po_vendor
 
+    elif kind == "reworded_lines":
+        while True:
+            lines = b.goods(count=rng.choice([2, 3]))
+            order = lines[1:] + lines[:1]
+            # Matched by line number, as the rules match, every line is off.
+            if all(abs(a["quantity"] - p["quantity"]) > p["quantity"] * 0.06 for a, p in zip(order, lines)):
+                break
+        po, receipt = b.po(lines), b.receipt(lines)
+        billed = [_line(i, _reword(l["description"], rng), l["quantity"], Decimal(l["unit_price"]))
+                  for i, l in enumerate(order, 1)]
+        invoice = b.invoice(billed, notes=b.note(""))
+
+    elif kind == "freight_at_cap":
+        lines = b.goods()
+        cap = _round_up(_subtotal(lines) * Decimal(str(rng.uniform(0.02, 0.06))) + 15)
+        po, receipt = b.po(lines, freight="capped", cap=cap), b.receipt(lines)
+        freight_line = _line(len(lines) + 1, rng.choice(["Freight", "Shipping & handling", "Freight charges"]),
+                             1, cap, is_freight=True)
+        invoice = b.invoice([dict(l) for l in lines] + [freight_line], notes=b.note(""))
+
+    elif kind in ("repeat_shipment", "repeat_not_received"):
+        half = b.goods()
+        lines = [_line(l["line_number"], l["description"], l["quantity"] * 2, Decimal(l["unit_price"])) for l in half]
+        po = b.po(lines)
+        po["terms"] = po["terms"].replace("Payment terms", "Deliver in two equal shipments; invoice each shipment. "
+                                                             "Payment terms", 1)
+        first_qty = {l["line_number"]: l["quantity"] for l in half}
+        receipt = b.receipt(lines, first_qty)
+        first_on = b.receipt_date + timedelta(days=rng.randint(1, 4))
+        paid = b.invoice([dict(l) for l in half], number=b.number_format.format(b.number_base - 1), on=first_on)
+        paid["status"] = "paid"
+        second_arrival = b.receipt_date + timedelta(days=rng.randint(14, 30))
+        if kind == "repeat_shipment":
+            second = b.receipt(lines, first_qty)
+            second["receipt_number"] = f"RCV-{(number * 53) % 90000 + 10001}"
+            second["receipt_date"] = second_arrival.isoformat()
+            case["extra_receipts"] = [second]
+        invoice = b.invoice([dict(l) for l in half], on=second_arrival + timedelta(days=rng.randint(1, 4)),
+                            notes=b.note("", "Second shipment.", "Balance of order."))
+        history = sorted(history + [paid], key=lambda h: h["invoice_date"], reverse=True)
+
+    elif kind in ("verified_bank_change", "unverified_bank_change"):
+        lines = b.goods()
+        po, receipt = b.po(lines), b.receipt(lines)
+        new = {"bank": rng.choice([x for x in BANKS if x != b.vendor["remit_to"]["bank"]]),
+               "account_last4": f"{rng.randint(0, 9999):04d}"}
+        if kind == "verified_bank_change":
+            old_account = b.vendor["remit_to"]
+            b.vendor["remit_to"] = new
+            b.vendor["remit_updated_on"] = (b.invoice_date - timedelta(days=rng.randint(10, 60))).isoformat()
+            b.vendor["remit_previous"] = f"{old_account['bank']}, account ending {old_account['account_last4']}"
+            notes = b.note("", *BANK_CHANGED)
+        else:
+            notes = b.note(*BANK_CHANGED, "As agreed by phone with your accounts payable team, please pay the "
+                                          "new account below.", neutral=0.1)
+        invoice = b.invoice([dict(l) for l in lines], remit_to=new, notes=notes)
+
+    elif kind in ("partial_tax", "partial_freight_over_cap"):
+        lines = b.goods()
+        while True:
+            got = {l["line_number"]: l["quantity"] for l in lines}
+            short = rng.choice(lines)
+            got[short["line_number"]] = max(1, int(short["quantity"] * rng.uniform(0.35, 0.85)))
+            if got[short["line_number"]] < short["quantity"]:
+                break
+        billed = [_line(l["line_number"], l["description"], got[l["line_number"]], Decimal(l["unit_price"]))
+                  for l in lines]
+        receipt = b.receipt(lines, got)
+        if kind == "partial_tax":
+            rate = Decimal(rng.choice(["0.0625", "0.0725", "0.0825", "0.0875", "0.095"]))
+            po = b.po(lines, tax_rate=rate)
+            invoice = b.invoice(billed, tax=_tax(_subtotal(billed), rate),
+                                notes=b.note("", "Partial shipment; balance to follow."))
+        else:
+            charge = _money(_subtotal(billed) * Decimal(str(rng.uniform(0.02, 0.06))) + rng.randint(20, 40))
+            cap = _round_down(charge * Decimal(str(rng.uniform(0.6, 0.95))))
+            cap = cap if cap >= 25 else Decimal(25)
+            charge = max(charge, cap + Decimal("5.00"))
+            po = b.po(lines, freight="capped", cap=cap)
+            freight_line = _line(len(lines) + 1, rng.choice(["Freight", "Shipping & handling"]), 1, charge,
+                                 is_freight=True)
+            invoice = b.invoice(billed + [freight_line], notes=b.note("", "Partial shipment; balance to follow."))
+
+    elif kind == "math_error":
+        lines = b.goods()
+        po, receipt = b.po(lines), b.receipt(lines)
+        target = rng.choice(lines)
+        # Small enough that the total stays within the rules' 1% tolerance.
+        extra = max(Decimal("1.00"), _money(_subtotal(lines) * Decimal(str(rng.uniform(0.003, 0.009)))))
+        billed = [dict(l, amount=_s(Decimal(l["amount"]) + extra)) if l is target else dict(l) for l in lines]
+        invoice = b.invoice(billed, notes=b.note(""))
+
+    elif kind == "one_over":
+        while True:
+            lines = b.goods(count=rng.choice([2, 3]))
+            total = _subtotal(lines)
+            fits = [l for l in lines if l["quantity"] >= 40 and Decimal(l["unit_price"]) < total * Decimal("0.008")]
+            if fits:
+                break
+        target = rng.choice(fits)
+        po, receipt = b.po(lines), b.receipt(lines)
+        billed = [_line(l["line_number"], l["description"], l["quantity"] + (l is target), Decimal(l["unit_price"]))
+                  for l in lines]
+        invoice = b.invoice(billed, notes=b.note(""))
+
+    elif kind == "small_price_increase":
+        while True:
+            lines = b.goods()
+            target = rng.choice(lines)
+            raised = _money(Decimal(target["unit_price"]) * Decimal(str(rng.uniform(1.003, 1.009))))
+            if raised == Decimal(target["unit_price"]):
+                raised += CENT
+            billed = [_line(l["line_number"], l["description"], l["quantity"],
+                            raised if l is target else Decimal(l["unit_price"])) for l in lines]
+            if _subtotal(billed) < _subtotal(lines) * Decimal("1.01"):
+                break
+        po, receipt = b.po(lines), b.receipt(lines)
+        invoice = b.invoice(billed, notes=b.note("", "", "Updated pricing per our notice."))
+
+    elif kind == "duplicate_reworded":
+        lines = b.goods()
+        po, receipt = b.po(lines), b.receipt(lines)
+        paid = b.invoice([dict(l) for l in lines], on=b.invoice_date)
+        paid["status"] = "paid"
+        reworded = [_line(l["line_number"], _reword(l["description"], rng), l["quantity"], Decimal(l["unit_price"]))
+                    for l in lines]
+        invoice = b.invoice(reworded, number=_resubmitted_number(b.invoice_number, rng),
+                            on=b.invoice_date + timedelta(days=rng.randint(10, 35)),
+                            notes=b.note("", "", *REMINDER))
+        history = sorted(history + [paid], key=lambda h: h["invoice_date"], reverse=True)
+
     else:
         raise ValueError(f"unknown kind {kind}")
 
@@ -520,9 +707,9 @@ def _build(rng: random.Random, number: int, kind: str) -> Dict:
     return case
 
 
-def generate(seed: int) -> List[Dict]:
+def generate(seed: int, counts: Dict[str, int] = COUNTS) -> List[Dict]:
     """The full set, shuffled so case numbers say nothing about kinds."""
     rng = random.Random(seed)
-    kinds = [kind for kind, count in COUNTS.items() for _ in range(count)]
+    kinds = [kind for kind, count in counts.items() for _ in range(count)]
     rng.shuffle(kinds)
     return [_build(rng, number, kind) for number, kind in enumerate(kinds, 1)]

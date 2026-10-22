@@ -79,7 +79,7 @@ async def ask(model: str, case_id: str, text: str) -> dict:
 async def main(number: int, model: str, seed_value: int, limit):
     folder = round_dir(number)
     folder.mkdir(parents=True, exist_ok=True)
-    cases = case_set.generate(seed=seed_value)[:limit]
+    cases = case_set.generate(seed=seed_value, counts=case_set.counts_for(number))[:limit]
     cases_path = folder / "cases.jsonl"
     if not cases_path.exists():
         cases_path.write_text("".join(json.dumps(c) + "\n" for c in cases))

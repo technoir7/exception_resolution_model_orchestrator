@@ -37,9 +37,11 @@ def _invoice(tenant_id: UUID, doc: Dict, vendor_id: str, po_number: str, status:
 
 
 def _vendor(tenant_id: UUID, v: Dict) -> Vendor:
+    updated = v.get("remit_updated_on")
     return Vendor(tenant_id=tenant_id, vendor_id=v["id"], name=v["name"], tax_id=v["tax_id"],
                   remit_bank=v["remit_to"]["bank"], remit_account_last4=v["remit_to"]["account_last4"],
-                  payment_terms=v["payment_terms"])
+                  payment_terms=v["payment_terms"], remit_previous=v.get("remit_previous"),
+                  remit_updated_on=date.fromisoformat(updated) if updated else None)
 
 
 async def load(db: AsyncSession, tenant_id: UUID, cases: List[Dict]) -> Dict[str, Invoice]:
@@ -56,8 +58,7 @@ async def load(db: AsyncSession, tenant_id: UUID, cases: List[Dict]) -> Dict[str
             status=POStatus.OPEN, vendor_id=po["vendor_id"], vendor_name=po["vendor_name"], currency="USD",
             total_amount=Decimal(po["total_amount"]), line_items=po["line_items"], terms=po["terms"],
         ))
-        if case["receipt"]:
-            r = case["receipt"]
+        for r in [case["receipt"], *case.get("extra_receipts", [])] if case["receipt"] else []:
             db.add(Receipt(
                 tenant_id=tenant_id, receipt_number=r["receipt_number"],
                 receipt_date=date.fromisoformat(r["receipt_date"]), po_number=r["po_number"],

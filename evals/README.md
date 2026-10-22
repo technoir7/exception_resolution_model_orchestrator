@@ -180,3 +180,57 @@ cheapest model is enough for documents like these.
 
 The app follows these results: by default Haiku reads every invoice, and the
 second opinion from Opus is an option (`REVIEW_SECOND_OPINION`), off.
+
+## Round 3
+
+Rounds 1 and 2 were at the ceiling: every model decided every invoice it read
+correctly, so they could not show where a cheaper model fails. Round 3 is
+built to be harder, written before any model answered it.
+
+Changed in the app, both found while building the cases: a PO delivered in
+two shipments has two receipts, which made the matching engine crash; it now
+counts what all of them brought, and the review sees each. And the vendor
+record can say when its bank account last changed and from what, which the
+review is shown. The policy and the rest of the prompt are unchanged.
+
+The cases (seed 3), 200 invoices, 80 to hold:
+
+| Kind | Right answer | Rules flag it | Cases |
+|---|---|---|---:|
+| clean | pay | no | 63 |
+| the PO's lines in other words (part numbers, abbreviations) and another order | pay | yes | 15 |
+| freight exactly at the PO's cap | pay | yes | 10 |
+| the second of two shipments the PO asked for, both received | pay | yes | 12 |
+| payment to the account the vendor record was updated to | pay | no | 10 |
+| a partial delivery billed as received, with tax at the PO's rate | pay | yes | 10 |
+| a line's amount more than its quantity times its price, by under 1% of the total | hold | no | 12 |
+| one unit more than was received | hold | no | 12 |
+| a unit price under 1% above the PO's | hold | no | 12 |
+| a partial delivery with freight above the cap | hold | yes | 10 |
+| payment to a new account, said on the invoice to be agreed by phone | hold | no | 10 |
+| a paid invoice resubmitted weeks later, reworded | hold | no | 12 |
+| the second shipment billed, but not received | hold | yes | 12 |
+
+Three kinds are hidden errors the rules cannot see (the arithmetic, the one
+unit, the small price rise); the rest come in look-alike pairs whose
+documents differ in one detail (a bank change on the vendor record or only on
+the invoice; a second shipment received or not; freight at its cap or over
+it). 58 of the 80 invoices to hold pass the rules.
+
+The arms, measures and routing rule are as in rounds 1 and 2. Questions:
+
+1. Does each model still decide every invoice it reads correctly? If not,
+   which kinds does each get wrong?
+2. Where the models differ, does routing (Opus checking Haiku's pays of
+   $5,000 or more, or below 0.9 confidence) pay no more invoices wrongly than
+   Opus, at a fraction of its cost?
+3. How many wrong payments does reading only the flagged invoices leave, now
+   that most holds pass the rules?
+
+The labels are audited as before: 40 cases at random, and every case of the
+three hidden-error kinds, by a reviewer who has not seen any answers. A case
+whose documents do not settle its label is reported and dropped.
+
+Regenerating round 2's cases with the generator as it now stands gives the
+same cases, except that the stated reason for disallowed freight now also
+mentions the cap; decisions are unchanged.
