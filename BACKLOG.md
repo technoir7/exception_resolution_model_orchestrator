@@ -1,104 +1,50 @@
-# Technical Debt & Backlog
+# Backlog
 
-Technical items that need attention but are deferred from MVP scope.
+Known gaps, roughly in order of what would matter most to a real deployment.
 
-## 🔴 High Priority (Should Fix Soon)
+## Harder benchmark cases
 
-### Database-Dependent Test Fixtures
-**Current state**: Tests for RulesEngine, AuditService, and duplicate detection require actual async PostgreSQL sessions.
-**Impact**: These tests can't run in CI without database infrastructure.
-**Solution**: Either:
-1. Create proper async SQLite fixtures for testing, or
-2. Mock the database layer in tests
+The benchmark (`evals/`) is at its ceiling for Haiku, Sonnet and Opus alike,
+so it cannot show where the cheaper model would start to fail. Next: invoices
+with several problems at once, near-misses (a quantity one unit over what was
+received, tax off by a rounding cent), documents read from PDFs, and the clues
+round 2's audit still found (vendor notes and renumbering that only appear on
+duplicates) removed.
 
-**Affected files**:
-- `test_rules_engine.py` - All tests ERROR
-- `test_recurring_invoices.py` - All tests ERROR  
-- `test_replay.py` - Some tests ERROR (audit event emission, drift detection)
-- `test_tolerance_stacking.py` - All tests ERROR
-- `test_split_po.py` - Most tests ERROR
+## Reading invoice PDFs
 
-### Tolerance Stacking at Document Level
-**Current state**: MatchingEngine checks line-item tolerances but may not aggregate for document-level check.
-**Impact**: Invoices could pass line-by-line checks but exceed total tolerance.
-**Solution**: Add explicit document total variance check in `matching_engine.py`.
+Invoices arrive as structured JSON. Real ones arrive as PDFs and scans, which
+would need extraction before the rules and the review, and a measure of how
+often extraction errors turn into wrong payments.
 
-### Recurring Invoice False Positives
-**Current state**: Fuzzy duplicate detection may flag monthly recurring invoices.
-**Impact**: High false-positive rate for recurring vendors.
-**Solution**: Add time-window filter to `RulesEngine._check_fuzzy_duplicate()`.
+## Invoices across several POs
 
----
+The matching engine assumes one invoice per PO. An invoice that bills two POs,
+or part of a consolidated one, is flagged and left to the review, which reads
+it as it is. The rules could match it instead.
 
-## 🟡 Medium Priority (Nice to Have)
+## Duplicate window
 
-### Split/Consolidated PO Support
-**Current state**: MatchingEngine assumes 1:1 invoice-to-PO relationship.
-**Impact**: Common scenarios (partial delivery, consolidated invoices) become exceptions.
-**Solution**: Add `match_multi_po()` and `match_partial()` methods to MatchingEngine.
+The fuzzy duplicate check looks a week either side of an invoice's date, which
+is why resubmissions weeks later pass the rules. The review catches them when
+it reads every invoice; the rules alone do not.
 
-### Rate Limiting
-**Current state**: No rate limiting on API endpoints.
-**Impact**: Potential for budget exhaustion attacks.
-**Solution**: Add FastAPI middleware with Redis-based rate limiting.
+## Rate limiting
 
-### PostgreSQL Row-Level Security
-**Current state**: Tenant isolation is application-level only.
-**Impact**: If any service skips tenant filter, data could leak.
-**Solution**: Add RLS policies to PostgreSQL tables.
+No rate limiting on the API. The daily model spend cap bounds what a flood of
+invoices could cost, but not the load.
 
----
+## Tenant isolation in the database
 
-## 🟢 Lower Priority (Future Enhancement)
+Tenant isolation is in the application only; a query that skips the tenant
+filter would leak another tenant's data. PostgreSQL row-level security would
+enforce it below the application.
 
-### Real LLM Provider Integration
-**Current state**: MockLLM only.
-**Impact**: Can't test actual LLM behavior.
-**Solution**: Implement OpenAI and Anthropic providers in `llm_provider.py`.
+## Notifications
 
-### Document OCR/Parsing
-**Current state**: Accepts pre-parsed JSON only.
-**Impact**: Can't process actual invoice PDFs/images.
-**Solution**: Integrate Azure Document Intelligence or similar.
+No notification when an exception nears or passes its deadline.
 
-### Email/Webhook Notifications
-**Current state**: No notifications for SLA breaches.
-**Impact**: Exceptions may be missed.
-**Solution**: Add notification service with configurable channels.
+## Production deployment
 
-### Production Deployment
-- Kubernetes manifests
-- Helm charts
-- CI/CD pipeline configuration
-- Secrets management (HashiCorp Vault or similar)
-
----
-
-## 📊 Test Coverage Summary
-
-| Test File | Status | Notes |
-|-----------|--------|-------|
-| `test_verification.py` | ✅ 11 passed | All working |
-| `test_circuit_breaker.py` | ✅ 9 passed | All working |
-| `test_recovery.py` | ✅ 7 passed | All working |
-| `test_security.py` | ✅ 9 passed | All working |
-| `test_llm_router.py` | ✅ Fixed | Uses mocked DB |
-| `test_rules_engine.py` | ⚠️ Needs DB | Deferred |
-| `test_recurring_invoices.py` | ⚠️ Needs DB | Deferred |
-| `test_replay.py` | ⚠️ Partial | Hash tests pass, DB tests deferred |
-| `test_tolerance_stacking.py` | ⚠️ Needs refactor | Test MatchingEngine directly |
-| `test_split_po.py` | ⚠️ Needs implementation | Feature not built |
-
----
-
-## Commands
-
-```bash
-# Run all passing tests
-pytest apps/api/tests/ --ignore=apps/api/tests/conftest.py -v
-
-# Run only unit tests (no DB required)
-pytest apps/api/tests/test_verification.py apps/api/tests/test_circuit_breaker.py \
-       apps/api/tests/test_recovery.py apps/api/tests/test_security.py \
-       apps/api/tests/test_llm_router.py -v
-```
+Logins are demo accounts with a development secret. A deployment would need
+real identity, secrets management, and CI.
