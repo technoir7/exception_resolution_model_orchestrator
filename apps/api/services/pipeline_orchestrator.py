@@ -105,7 +105,7 @@ class PipelineOrchestrator:
             # Without models there is nothing to read clean invoices with, so
             # the rules alone decide them.
             if not flags and (self.scope == "flagged" or self.models is None):
-                return await self._pay(invoice, run, "passed every check")
+                return await self._pay(invoice, run, "passed every check", flags)
 
             run.transition_to(PipelineState.LLM_PROCESSING)
             if self.models is None:
@@ -117,7 +117,7 @@ class PipelineOrchestrator:
                     invoice, run, ExceptionCategory.LLM_VALIDATION_FAILED, "No usable review",
                     "The models gave no readable verdict, or the daily spend cap was reached.", flags)
             if verdict.decision == "pay":
-                return await self._pay(invoice, run, verdict.explanation)
+                return await self._pay(invoice, run, verdict.explanation, flags)
             return await self._to_a_person(
                 invoice, run, HOLD_CATEGORY.get(verdict.reason, ExceptionCategory.OTHER),
                 f"Held: {verdict.explanation[:150]}", verdict.explanation, flags)
@@ -188,12 +188,13 @@ class PipelineOrchestrator:
             return verdict
         return None
 
-    async def _pay(self, invoice: Invoice, run: InvoicePipelineRun, why: str) -> InvoicePipelineRun:
+    async def _pay(self, invoice: Invoice, run: InvoicePipelineRun, why: str,
+                   flags: List[str]) -> InvoicePipelineRun:
         run.transition_to(PipelineState.COMPLETED)
         run.final_decision = "approved"
         invoice.status = InvoiceStatus.APPROVED
         await self._audit(invoice, run, AuditStep.PIPELINE_COMPLETED, {"invoice_id": str(invoice.id)},
-                          {"decision": "approved", "why": why}, datetime.utcnow())
+                          {"decision": "approved", "why": why, "flags": flags}, datetime.utcnow())
         return run
 
     async def _to_a_person(self, invoice: Invoice, run: InvoicePipelineRun, category: ExceptionCategory,
@@ -208,7 +209,8 @@ class PipelineOrchestrator:
         run.final_decision = "review"
         invoice.status = InvoiceStatus.EXCEPTION
         await self._audit(invoice, run, AuditStep.EXCEPTION_CREATED, {"category": category.value},
-                          {"title": title}, datetime.utcnow())
+                          {"decision": "review", "title": title, "why": description, "flags": flags},
+                          datetime.utcnow())
         return run
 
     async def _audit(self, invoice, run, step, raw_input, raw_output, started, model_id=None):

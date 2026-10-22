@@ -4,7 +4,7 @@ Cost schemas for API request/response.
 
 from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional, List
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -50,67 +50,40 @@ class CostByInvoiceResponse(BaseModel):
     final_status: str
 
 
-class CostByExceptionTypeResponse(BaseModel):
-    """Cost aggregated by exception type."""
-    category: str
-    total_cost_usd: Decimal
-    exception_count: int
-    avg_cost_per_exception: Decimal
-
-
-class CostByModelTierResponse(BaseModel):
-    """Cost aggregated by model tier."""
-    model_tier: ModelTier
-    total_cost_usd: Decimal
-    call_count: int
-    total_tokens: int
-    avg_cost_per_call: Decimal
-
-
-class CacheMetricsResponse(BaseModel):
-    """Cache performance metrics."""
-    total_requests: int
-    cache_hits: int
-    cache_misses: int
-    hit_rate: float = Field(..., ge=0, le=1)
-    
-    total_savings_usd: Decimal
-    avg_savings_per_hit: Decimal
-
-
-class DailyCostResponse(BaseModel):
-    """Daily cost summary."""
-    date: date
-    total_cost_usd: Decimal
-    invoice_count: int
-    exception_count: int
-    cache_hit_rate: float
+class ModelSpend(BaseModel):
+    """What one model was paid over a period."""
+    model_id: Optional[str] = None
+    calls: int
+    input_tokens: int
+    output_tokens: int
+    cost_usd: Decimal
 
 
 class CostDashboardResponse(BaseModel):
-    """Full cost dashboard data."""
-    # Summary metrics
-    total_cost_usd: Decimal
-    total_invoices_processed: int
-    avg_cost_per_invoice: Decimal
-    avg_cost_per_verified_invoice: Decimal
-    
-    # Touchless rate
-    touchless_count: int
-    exception_count: int
-    touchless_rate: float
-    
-    # Cache metrics
-    cache_metrics: CacheMetricsResponse
-    
-    # Breakdowns
-    cost_by_model_tier: List[CostByModelTierResponse]
-    cost_by_exception_type: List[CostByExceptionTypeResponse]
-    daily_costs: List[DailyCostResponse]
-    
-    # Time range
+    """Model spend over a period, against the invoices received in it."""
     start_date: date
     end_date: date
+    total_cost_usd: Decimal
+    invoices_by_status: Dict[str, int]
+    cost_per_invoice: Decimal
+    spent_today: Decimal
+    daily_cap_usd: Decimal
+    by_model: List[ModelSpend]
+
+
+class ModelCall(BaseModel):
+    model_id: Optional[str] = None
+    input_tokens: int
+    output_tokens: int
+    cost_usd: Decimal
+    at: datetime
+
+
+class InvoiceCostResponse(BaseModel):
+    """What reading and reviewing one invoice cost, call by call."""
+    invoice_id: UUID
+    total_cost_usd: Decimal
+    calls: List[ModelCall]
 
 
 class TenantSpendResponse(BaseModel):

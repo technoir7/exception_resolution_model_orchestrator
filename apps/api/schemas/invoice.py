@@ -136,6 +136,8 @@ class InvoiceResponse(BaseModel):
     tax_amount: Optional[Decimal] = None
     total_amount: Optional[Decimal] = None
     line_items: Optional[List[LineItem]] = None
+    # Remit-to, notes, service period, and the model that read a PDF
+    extracted_data: Optional[dict] = None
     
     # Processing info
     validation_errors: Optional[dict] = None

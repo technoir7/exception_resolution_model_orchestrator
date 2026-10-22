@@ -43,8 +43,9 @@ class AuditEventResponse(BaseModel):
     actor_type: str
     actor_id: Optional[UUID] = None
     
-    # Metadata
-    metadata: Optional[dict] = None
+    # The model's `metadata` attribute is SQLAlchemy's table registry; the
+    # event's own is stored as `event_metadata`.
+    metadata: Optional[dict] = Field(None, validation_alias="event_metadata")
     
     created_at: datetime
     

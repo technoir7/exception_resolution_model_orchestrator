@@ -145,3 +145,24 @@ class TestCost:
         result, _, models = await run(db_session, a("tax_correct"), haiku=[])
         assert result.state == PipelineState.EXCEPTION
         assert models["haiku"].prompts == []
+
+
+class TestTheRecord:
+    """The last audit event says what was decided, why, and what the rules
+    flagged, so a person can see it without replaying the run."""
+
+    async def last_event(self, db, invoice):
+        from apps.api.services.audit_service import AuditService
+        return (await AuditService(db, TEST_TENANT_ID).get_timeline(invoice.id))[-1].raw_output
+
+    async def test_of_a_hold(self, db_session):
+        _, invoice, _ = await run(db_session, a("price_increase"), haiku=[verdict("hold", reason="price")])
+        last = await self.last_event(db_session, invoice)
+        assert (last["decision"], last["why"]) == ("review", "x")
+        assert last["flags"]
+
+    async def test_of_a_pay(self, db_session):
+        _, invoice, _ = await run(db_session, a("partial_delivery", large=False), haiku=[verdict("pay")])
+        last = await self.last_event(db_session, invoice)
+        assert (last["decision"], last["why"]) == ("approved", "x")
+        assert last["flags"]

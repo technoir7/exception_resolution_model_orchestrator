@@ -5,11 +5,12 @@ Authentication routes.
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from jose import jwt
 
 from apps.api.config import settings
-from apps.api.schemas.auth import LoginRequest, LoginResponse, UserInfo, UserRole
+from apps.api.dependencies import get_current_user
+from apps.api.schemas.auth import LoginRequest, LoginResponse, TokenPayload, UserInfo, UserRole
 
 router = APIRouter()
 
@@ -80,12 +81,11 @@ async def login(request: LoginRequest):
 
 
 @router.get("/me", response_model=UserInfo)
-async def get_current_user_info():
-    """Get current user info (demo endpoint)."""
-    return UserInfo(
-        id=DEMO_USERS["controller"]["id"],
-        username="controller",
-        role=UserRole.CONTROLLER,
-        tenant_id=DEMO_USERS["controller"]["tenant_id"],
-        tenant_name=DEMO_USERS["controller"]["tenant_name"],
-    )
+async def get_current_user_info(current_user: TokenPayload = Depends(get_current_user)):
+    """The user the token belongs to."""
+    username, user = next(((name, u) for name, u in DEMO_USERS.items() if u["id"] == current_user.sub),
+                          (None, None))
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unknown user")
+    return UserInfo(id=user["id"], username=username, role=user["role"], tenant_id=user["tenant_id"],
+                    tenant_name=user["tenant_name"])

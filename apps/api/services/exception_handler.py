@@ -18,10 +18,21 @@ from apps.api.models.exception import (
     EXCEPTION_SLA_HOURS,
     EXCEPTION_OWNER_ROLE,
 )
+from apps.api.models.audit import AuditStep
 from apps.api.models.invoice import Invoice, InvoiceStatus
+from apps.api.services.audit_service import AuditService
 from apps.api.services.rules_engine import RuleViolation, RuleViolationType
 
 logger = structlog.get_logger()
+
+# What a person's decision does to the exception and to its invoice. Escalating
+# leaves the invoice held, for someone more senior to decide.
+RESOLUTIONS = {
+    "approve": (ExceptionStatus.RESOLVED, InvoiceStatus.APPROVED),
+    "reject": (ExceptionStatus.RESOLVED, InvoiceStatus.REJECTED),
+    "reprocess": (ExceptionStatus.RESOLVED, InvoiceStatus.PENDING),
+    "escalate": (ExceptionStatus.ESCALATED, None),
+}
 
 
 # Mapping from rule violation types to exception categories
@@ -138,12 +149,22 @@ class ExceptionHandler:
         resolution_action: str,
         resolved_by: UUID,
     ) -> ExceptionCase:
-        """Resolve an exception case."""
-        exception.status = ExceptionStatus.RESOLVED
+        """A person's decision on a held invoice, recorded in its audit trail."""
+        exception_status, invoice_status = RESOLUTIONS[resolution_action]
+        exception.status = exception_status
         exception.resolution = resolution
         exception.resolution_action = resolution_action
         exception.resolved_by = resolved_by
         exception.resolved_at = datetime.utcnow()
+        if invoice_status is not None:
+            invoice = await self.db.get(Invoice, exception.invoice_id)
+            invoice.status = invoice_status
+        await AuditService(self.db, self.tenant_id).emit(
+            invoice_id=exception.invoice_id, pipeline_run_id=exception.pipeline_run_id,
+            step=AuditStep.EXCEPTION_RESOLVED, raw_input={"exception_id": str(exception.id)},
+            raw_output={"action": resolution_action, "resolution": resolution}, started_at=exception.resolved_at,
+            actor_id=resolved_by, actor_type="user",
+        )
         
         self.logger.info(
             "Resolved exception",

@@ -17,7 +17,7 @@ from apps.api.schemas.exception import (
     ExceptionListResponse,
     ExceptionResolveRequest,
 )
-from apps.api.services.exception_handler import ExceptionHandler
+from apps.api.services.exception_handler import RESOLUTIONS, ExceptionHandler
 
 router = APIRouter()
 
@@ -128,11 +128,10 @@ async def resolve_exception(
             detail="Exception is already resolved",
         )
     
-    valid_actions = {"approve", "reject", "escalate", "reprocess"}
-    if request.resolution_action not in valid_actions:
+    if request.resolution_action not in RESOLUTIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid resolution action. Must be one of: {valid_actions}",
+            detail=f"Invalid resolution action. Must be one of: {', '.join(RESOLUTIONS)}",
         )
     
     handler = ExceptionHandler(ctx.db, ctx.tenant_id)

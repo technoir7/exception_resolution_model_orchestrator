@@ -28,6 +28,5 @@ from apps.api.schemas.audit import (
 from apps.api.schemas.cost import (
     CostDashboardResponse,
     CostByInvoiceResponse,
-    CostByExceptionTypeResponse,
-    CacheMetricsResponse,
+    InvoiceCostResponse,
 )

@@ -2,7 +2,7 @@
 Cost Service for tracking and aggregating LLM costs.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
 from uuid import UUID
@@ -16,6 +16,10 @@ from apps.api.models.invoice import Invoice, InvoiceStatus
 from apps.api.config import settings
 
 logger = structlog.get_logger()
+
+
+def utc_today() -> date:
+    return datetime.now(timezone.utc).date()
 
 
 class CostService:
@@ -144,61 +148,12 @@ class CostService:
         
         return total_cost / len(invoice_ids)
     
-    async def get_cache_metrics(
-        self, start_date: Optional[date] = None, end_date: Optional[date] = None
-    ) -> Dict[str, Any]:
-        """Get cache hit rate and savings metrics."""
-        if not start_date:
-            start_date = date.today() - timedelta(days=30)
-        if not end_date:
-            end_date = date.today()
-        
-        query = select(
-            func.count(CostEvent.id).label("total"),
-            func.sum(func.cast(CostEvent.was_cache_hit, Integer)).label("hits"),
-        ).where(
-            and_(
-                CostEvent.tenant_id == self.tenant_id,
-                func.date(CostEvent.event_timestamp) >= start_date,
-                func.date(CostEvent.event_timestamp) <= end_date,
-            )
-        )
-        
-        # Simpler query to avoid Integer import issue
-        total_query = select(func.count(CostEvent.id)).where(
-            and_(
-                CostEvent.tenant_id == self.tenant_id,
-                func.date(CostEvent.event_timestamp) >= start_date,
-            )
-        )
-        total_result = await self.db.execute(total_query)
-        total = total_result.scalar_one() or 0
-        
-        hits_query = select(func.count(CostEvent.id)).where(
-            and_(
-                CostEvent.tenant_id == self.tenant_id,
-                CostEvent.was_cache_hit == True,
-                func.date(CostEvent.event_timestamp) >= start_date,
-            )
-        )
-        hits_result = await self.db.execute(hits_query)
-        hits = hits_result.scalar_one() or 0
-        
-        hit_rate = hits / total if total > 0 else 0
-        
-        return {
-            "total_requests": total,
-            "cache_hits": hits,
-            "cache_misses": total - hits,
-            "hit_rate": hit_rate,
-        }
-    
     async def get_daily_spend(self) -> Decimal:
-        """Get today's total spend."""
+        """Today's total spend. Calls are stamped in UTC, so the day is too."""
         query = select(func.coalesce(func.sum(CostEvent.cost_usd), 0)).where(
             and_(
                 CostEvent.tenant_id == self.tenant_id,
-                func.date(CostEvent.event_timestamp) == date.today(),
+                func.date(CostEvent.event_timestamp) == utc_today(),
             )
         )
         result = await self.db.execute(query)

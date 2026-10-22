@@ -1,158 +1,89 @@
 """
-Cost metrics routes.
+Model spend: over a period, and for one invoice.
 """
 
 from datetime import date, timedelta
 from decimal import Decimal
 from typing import Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, func, and_
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, func, select
 
-from apps.api.dependencies import get_tenant_context, TenantContext
-from apps.api.models.cost import CostEvent, ModelTier
+from apps.api.config import settings
+from apps.api.dependencies import TenantContext, get_tenant_context
+from apps.api.models.cost import CostEvent
 from apps.api.models.invoice import Invoice, InvoiceStatus
-from apps.api.models.exception import ExceptionCase
-from apps.api.schemas.cost import (
-    CostDashboardResponse,
-    CostByModelTierResponse,
-    CostByExceptionTypeResponse,
-    CacheMetricsResponse,
-    DailyCostResponse,
-)
-from apps.api.services.cost_service import CostService
+from apps.api.schemas.cost import CostDashboardResponse, InvoiceCostResponse, ModelCall, ModelSpend
+from apps.api.services.cost_service import CostService, utc_today
 
 router = APIRouter()
 
 
 @router.get("/cost", response_model=CostDashboardResponse)
 async def get_cost_dashboard(
-    start_date: Optional[date] = Query(None),
-    end_date: Optional[date] = Query(None),
+    start_date: Optional[date] = Query(None, description="Default: 30 days before end_date"),
+    end_date: Optional[date] = Query(None, description="Default: today, in UTC"),
     ctx: TenantContext = Depends(get_tenant_context),
 ):
-    """Get cost dashboard with all metrics."""
-    if not start_date:
-        start_date = date.today() - timedelta(days=30)
-    if not end_date:
-        end_date = date.today()
-    
-    cost_service = CostService(ctx.db, ctx.tenant_id)
-    
-    # Total cost
-    cost_query = select(func.coalesce(func.sum(CostEvent.cost_usd), 0)).where(
-        and_(
-            CostEvent.tenant_id == ctx.tenant_id,
-            func.date(CostEvent.event_timestamp) >= start_date,
-            func.date(CostEvent.event_timestamp) <= end_date,
-        )
-    )
-    total_cost = Decimal(str((await ctx.db.execute(cost_query)).scalar_one() or 0))
-    
-    # Invoice counts
-    inv_query = select(func.count(Invoice.id)).where(
-        and_(
-            Invoice.tenant_id == ctx.tenant_id,
-            func.date(Invoice.created_at) >= start_date,
-            func.date(Invoice.created_at) <= end_date,
-        )
-    )
-    total_invoices = (await ctx.db.execute(inv_query)).scalar_one() or 0
-    
-    approved_query = select(func.count(Invoice.id)).where(
-        and_(
-            Invoice.tenant_id == ctx.tenant_id,
-            Invoice.status == InvoiceStatus.APPROVED,
-            func.date(Invoice.created_at) >= start_date,
-        )
-    )
-    touchless_count = (await ctx.db.execute(approved_query)).scalar_one() or 0
-    
-    exception_query = select(func.count(Invoice.id)).where(
-        and_(
-            Invoice.tenant_id == ctx.tenant_id,
-            Invoice.status == InvoiceStatus.EXCEPTION,
-            func.date(Invoice.created_at) >= start_date,
-        )
-    )
-    exception_count = (await ctx.db.execute(exception_query)).scalar_one() or 0
-    
-    # Calculate averages
-    avg_per_invoice = total_cost / total_invoices if total_invoices > 0 else Decimal("0")
-    avg_per_verified = total_cost / touchless_count if touchless_count > 0 else Decimal("0")
-    touchless_rate = touchless_count / total_invoices if total_invoices > 0 else 0.0
-    
-    # Cache metrics
-    cache_metrics = await cost_service.get_cache_metrics(start_date, end_date)
-    
-    # Cost by model tier
-    tier_query = select(
-        CostEvent.model_tier,
-        func.sum(CostEvent.cost_usd).label("total_cost"),
-        func.count(CostEvent.id).label("call_count"),
-        func.sum(CostEvent.total_tokens).label("total_tokens"),
-    ).where(
-        and_(
-            CostEvent.tenant_id == ctx.tenant_id,
-            func.date(CostEvent.event_timestamp) >= start_date,
-            CostEvent.model_tier.isnot(None),
-        )
-    ).group_by(CostEvent.model_tier)
-    
-    tier_result = await ctx.db.execute(tier_query)
-    cost_by_tier = []
-    for row in tier_result.fetchall():
-        if row.model_tier:
-            avg_cost = Decimal(str(row.total_cost or 0)) / row.call_count if row.call_count else Decimal("0")
-            cost_by_tier.append(CostByModelTierResponse(
-                model_tier=row.model_tier,
-                total_cost_usd=Decimal(str(row.total_cost or 0)),
-                call_count=row.call_count or 0,
-                total_tokens=row.total_tokens or 0,
-                avg_cost_per_call=avg_cost,
-            ))
-    
-    # Cost by exception type
-    exc_cost_query = select(
-        ExceptionCase.category,
-        func.count(ExceptionCase.id).label("exc_count"),
-    ).where(
-        and_(
-            ExceptionCase.tenant_id == ctx.tenant_id,
-            func.date(ExceptionCase.created_at) >= start_date,
-        )
-    ).group_by(ExceptionCase.category)
-    
-    exc_result = await ctx.db.execute(exc_cost_query)
-    cost_by_exc = []
-    for row in exc_result.fetchall():
-        cost_by_exc.append(CostByExceptionTypeResponse(
-            category=row.category.value if row.category else "other",
-            total_cost_usd=Decimal("0.05") * row.exc_count,  # Estimate
-            exception_count=row.exc_count,
-            avg_cost_per_exception=Decimal("0.05"),
-        ))
-    
+    """Model spend over a period, by model, against the invoices received in
+    it. The spend includes calls for PDFs refused at intake."""
+    end_date = end_date or utc_today()
+    start_date = start_date or end_date - timedelta(days=30)
+
+    def in_period(column):
+        return and_(func.date(column) >= start_date, func.date(column) <= end_date)
+
+    rows = (await ctx.db.execute(
+        select(CostEvent.model_id, func.count(CostEvent.id), func.sum(CostEvent.input_tokens),
+               func.sum(CostEvent.output_tokens), func.sum(CostEvent.cost_usd))
+        .where(CostEvent.tenant_id == ctx.tenant_id, in_period(CostEvent.event_timestamp))
+        .group_by(CostEvent.model_id)
+    )).all()
+    by_model = sorted(
+        (ModelSpend(model_id=model, calls=calls, input_tokens=inputs or 0, output_tokens=outputs or 0,
+                    cost_usd=Decimal(str(cost or 0))) for model, calls, inputs, outputs, cost in rows),
+        key=lambda m: m.cost_usd, reverse=True)
+    total = sum((m.cost_usd for m in by_model), Decimal(0))
+
+    statuses = (await ctx.db.execute(
+        select(Invoice.status, func.count(Invoice.id))
+        .where(Invoice.tenant_id == ctx.tenant_id, in_period(Invoice.created_at))
+        .group_by(Invoice.status)
+    )).all()
+    by_status = {InvoiceStatus(s).value: n for s, n in statuses}
+    invoices = sum(by_status.values())
+
     return CostDashboardResponse(
-        total_cost_usd=total_cost,
-        total_invoices_processed=total_invoices,
-        avg_cost_per_invoice=avg_per_invoice,
-        avg_cost_per_verified_invoice=avg_per_verified,
-        touchless_count=touchless_count,
-        exception_count=exception_count,
-        touchless_rate=touchless_rate,
-        cache_metrics=CacheMetricsResponse(
-            total_requests=cache_metrics["total_requests"],
-            cache_hits=cache_metrics["cache_hits"],
-            cache_misses=cache_metrics["cache_misses"],
-            hit_rate=cache_metrics["hit_rate"],
-            total_savings_usd=Decimal("0"),
-            avg_savings_per_hit=Decimal("0"),
-        ),
-        cost_by_model_tier=cost_by_tier,
-        cost_by_exception_type=cost_by_exc,
-        daily_costs=[],
         start_date=start_date,
         end_date=end_date,
+        total_cost_usd=total,
+        invoices_by_status=by_status,
+        cost_per_invoice=total / invoices if invoices else Decimal(0),
+        spent_today=await CostService(ctx.db, ctx.tenant_id).get_daily_spend(),
+        daily_cap_usd=settings.router_tenant_daily_cap,
+        by_model=by_model,
+    )
+
+
+@router.get("/cost/invoices/{invoice_id}", response_model=InvoiceCostResponse)
+async def get_invoice_cost(
+    invoice_id: UUID,
+    ctx: TenantContext = Depends(get_tenant_context),
+):
+    """What reading and reviewing one invoice cost, call by call."""
+    found = await ctx.db.scalar(
+        select(Invoice.id).where(Invoice.id == invoice_id, Invoice.tenant_id == ctx.tenant_id))
+    if found is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")
+    events = (await ctx.db.execute(
+        select(CostEvent)
+        .where(CostEvent.tenant_id == ctx.tenant_id, CostEvent.invoice_id == invoice_id)
+        .order_by(CostEvent.event_timestamp)
+    )).scalars().all()
+    return InvoiceCostResponse(
+        invoice_id=invoice_id,
+        total_cost_usd=sum((e.cost_usd for e in events), Decimal(0)),
+        calls=[ModelCall(model_id=e.model_id, input_tokens=e.input_tokens, output_tokens=e.output_tokens,
+                         cost_usd=e.cost_usd, at=e.event_timestamp) for e in events],
     )
