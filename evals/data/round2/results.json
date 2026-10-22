@@ -1,0 +1,512 @@
+{
+ "rules only": {
+  "invoices": 200,
+  "wrong_payments": 18,
+  "wrong_payment_dollars": "56604.90",
+  "wrong_payment_kinds": {
+   "bank_change": 10,
+   "duplicate_late": 8
+  },
+  "to_a_person": 130,
+  "needless_reviews": 66,
+  "model_calls": 0,
+  "model_cost_usd": "0.0000",
+  "model_cost_per_invoice_usd": "0.00000",
+  "by_kind": {
+   "bank_change": {
+    "paid": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "paid": 8
+   },
+   "freight_allowed": {
+    "person": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "person": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "person": 12
+   },
+   "tax_correct": {
+    "person": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "person": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ },
+ "haiku on flagged": {
+  "invoices": 200,
+  "wrong_payments": 18,
+  "wrong_payment_dollars": "56604.90",
+  "wrong_payment_kinds": {
+   "bank_change": 10,
+   "duplicate_late": 8
+  },
+  "to_a_person": 64,
+  "needless_reviews": 0,
+  "model_calls": 130,
+  "model_cost_usd": "0.0758",
+  "model_cost_per_invoice_usd": "0.00038",
+  "by_kind": {
+   "bank_change": {
+    "paid": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "paid": 8
+   },
+   "freight_allowed": {
+    "paid": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "paid": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "paid": 12
+   },
+   "tax_correct": {
+    "paid": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "paid": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ },
+ "sonnet on flagged": {
+  "invoices": 200,
+  "wrong_payments": 18,
+  "wrong_payment_dollars": "56604.90",
+  "wrong_payment_kinds": {
+   "bank_change": 10,
+   "duplicate_late": 8
+  },
+  "to_a_person": 64,
+  "needless_reviews": 0,
+  "model_calls": 130,
+  "model_cost_usd": "1.1759",
+  "model_cost_per_invoice_usd": "0.00588",
+  "by_kind": {
+   "bank_change": {
+    "paid": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "paid": 8
+   },
+   "freight_allowed": {
+    "paid": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "paid": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "paid": 12
+   },
+   "tax_correct": {
+    "paid": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "paid": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ },
+ "opus on flagged": {
+  "invoices": 200,
+  "wrong_payments": 18,
+  "wrong_payment_dollars": "56604.90",
+  "wrong_payment_kinds": {
+   "bank_change": 10,
+   "duplicate_late": 8
+  },
+  "to_a_person": 64,
+  "needless_reviews": 0,
+  "model_calls": 131,
+  "model_cost_usd": "2.3712",
+  "model_cost_per_invoice_usd": "0.01186",
+  "by_kind": {
+   "bank_change": {
+    "paid": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "paid": 8
+   },
+   "freight_allowed": {
+    "paid": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "paid": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "paid": 12
+   },
+   "tax_correct": {
+    "paid": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "paid": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ },
+ "routed on flagged": {
+  "invoices": 200,
+  "wrong_payments": 18,
+  "wrong_payment_dollars": "56604.90",
+  "wrong_payment_kinds": {
+   "bank_change": 10,
+   "duplicate_late": 8
+  },
+  "to_a_person": 64,
+  "needless_reviews": 0,
+  "model_calls": 143,
+  "model_cost_usd": "0.3248",
+  "model_cost_per_invoice_usd": "0.00162",
+  "by_kind": {
+   "bank_change": {
+    "paid": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "paid": 8
+   },
+   "freight_allowed": {
+    "paid": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "paid": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "paid": 12
+   },
+   "tax_correct": {
+    "paid": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "paid": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ },
+ "haiku on everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 82,
+  "needless_reviews": 0,
+  "model_calls": 200,
+  "model_cost_usd": "0.1159",
+  "model_cost_per_invoice_usd": "0.00058",
+  "by_kind": {
+   "bank_change": {
+    "person": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "person": 8
+   },
+   "freight_allowed": {
+    "paid": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "paid": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "paid": 12
+   },
+   "tax_correct": {
+    "paid": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "paid": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ },
+ "sonnet on everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 82,
+  "needless_reviews": 0,
+  "model_calls": 200,
+  "model_cost_usd": "1.7755",
+  "model_cost_per_invoice_usd": "0.00888",
+  "by_kind": {
+   "bank_change": {
+    "person": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "person": 8
+   },
+   "freight_allowed": {
+    "paid": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "paid": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "paid": 12
+   },
+   "tax_correct": {
+    "paid": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "paid": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ },
+ "opus on everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 82,
+  "needless_reviews": 0,
+  "model_calls": 201,
+  "model_cost_usd": "3.6146",
+  "model_cost_per_invoice_usd": "0.01807",
+  "by_kind": {
+   "bank_change": {
+    "person": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "person": 8
+   },
+   "freight_allowed": {
+    "paid": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "paid": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "paid": 12
+   },
+   "tax_correct": {
+    "paid": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "paid": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ },
+ "routed on everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 82,
+  "needless_reviews": 0,
+  "model_calls": 230,
+  "model_cost_usd": "0.6860",
+  "model_cost_per_invoice_usd": "0.00343",
+  "by_kind": {
+   "bank_change": {
+    "person": 10
+   },
+   "clean": {
+    "paid": 52
+   },
+   "duplicate": {
+    "person": 10
+   },
+   "duplicate_late": {
+    "person": 8
+   },
+   "freight_allowed": {
+    "paid": 14
+   },
+   "freight_not_allowed": {
+    "person": 12
+   },
+   "overbilled_quantity": {
+    "person": 12
+   },
+   "partial_delivery": {
+    "paid": 14
+   },
+   "price_increase": {
+    "person": 12
+   },
+   "recurring_service": {
+    "paid": 12
+   },
+   "tax_correct": {
+    "paid": 14
+   },
+   "tax_wrong": {
+    "person": 12
+   },
+   "unit_of_measure": {
+    "paid": 12
+   },
+   "vendor_mismatch": {
+    "person": 6
+   }
+  }
+ }
+}

@@ -72,10 +72,19 @@ class Settings(BaseSettings):
         description="Have Claude review invoices; off, every flagged invoice goes to a person",
         alias="REVIEW_WITH_MODELS",
     )
+    # Every invoice, not only the flagged ones: in the benchmark (evals/) that
+    # is what caught payments to a new bank account and duplicates the rules
+    # miss, for under a tenth of a cent an invoice with Haiku.
     review_scope: str = Field(
-        default="flagged",
+        default="everything",
         description="'flagged': models read the invoices the rules flag; 'everything': every invoice",
         alias="REVIEW_SCOPE",
+    )
+    # Off: in the benchmark the stronger model never changed Haiku's decision.
+    review_second_opinion: bool = Field(
+        default=False,
+        description="Have the strongest model check large or unsure pays (apps/api/services/routing.py)",
+        alias="REVIEW_SECOND_OPINION",
     )
 
     # LLM Router Policy - Cost caps

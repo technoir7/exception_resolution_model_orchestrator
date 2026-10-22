@@ -129,3 +129,54 @@ Everything else is as round 1: the same prompt, models, arms, routing rule
 and measures, and a fresh label audit of 40 random cases by a reviewer who has
 not seen any answers. Round 2's results are the ones the project's README
 reports; round 1's are reported here beside them.
+
+## Results
+
+Both rounds' label audits agreed with every label checked (40 random cases
+in round 1; 40 random and 19 chosen in round 2), so no case was dropped.
+
+Round 2 (seed 2), 200 invoices, of which 82 should be held:
+
+| Arm | Wrong payments | Paid wrongly | To a person | Needless reviews | Model cost per invoice |
+|---|---:|---:|---:|---:|---:|
+| rules only | 18 | $56,604.90 | 130 | 66 | $0 |
+| haiku on flagged | 18 | $56,604.90 | 64 | 0 | $0.00038 |
+| sonnet on flagged | 18 | $56,604.90 | 64 | 0 | $0.00588 |
+| opus on flagged | 18 | $56,604.90 | 64 | 0 | $0.01186 |
+| routed on flagged | 18 | $56,604.90 | 64 | 0 | $0.00162 |
+| haiku on everything | 0 | $0 | 82 | 0 | $0.00058 |
+| sonnet on everything | 0 | $0 | 82 | 0 | $0.00888 |
+| opus on everything | 0 | $0 | 82 | 0 | $0.01807 |
+| routed on everything | 0 | $0 | 82 | 0 | $0.00343 |
+
+Every model decided every invoice it read correctly, and gave the right
+reason for all 82 holds. One answer in 600 needed a retry. Each took about 4
+seconds an invoice.
+
+1. Against rules only, a model on the flagged invoices cleared all 66
+   needless reviews; the 18 wrong payments left are the late duplicates and
+   bank changes the rules pass, which it never read. Reading every invoice
+   caught all 18, and sent to a person exactly the 82 that should be held.
+2. Routing paid no more wrongly than Opus, at 14% of its cost on the flagged
+   invoices and 19% on all of them. But Opus never changed Haiku's decision,
+   so Haiku alone did as well for a quarter to a sixth of routing's cost.
+3. Reading the invoices the rules pass caught every late duplicate and bank
+   change, for $0.00058 an invoice with Haiku.
+
+Round 1 (seed 1, the cases with shortcuts) came out the same, except that
+Haiku and Sonnet each sent one payable invoice to a person (freight under
+its cap): 0 wrong payments for every model on everything, 18 for every model
+on flagged, against 18 and 66 needless reviews for rules only.
+
+**What this does not show.** These cases are at the ceiling for all three
+models, so they cannot rank them, or show where the cheaper model starts to
+fail. The documents are clean structured data, each hold has one problem,
+and round 2's audit still found clues a model could use (vendor notes such as
+"Copy of invoice" only on duplicates; renumbered invoices, when suffixed,
+only on duplicates). Real invoices, read from PDFs, with several issues at
+once, would be harder. What the cases do show is that the choice of what the
+model reads matters far more here than which model reads it, and that the
+cheapest model is enough for documents like these.
+
+The app follows these results: by default Haiku reads every invoice, and the
+second opinion from Opus is an option (`REVIEW_SECOND_OPINION`), off.

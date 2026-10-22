@@ -4,10 +4,11 @@ what they flag, then payment or a person.
 
 A model's verdict is pay or hold, and a hold puts the invoice in front of a
 person: no model rejects an invoice, and none pays one the rules flagged
-without reading its documents. The cheapest model reads first; the strongest
-checks its pays where a mistake would cost most (`routing.py`). Every call is
-recorded at what it cost, and past the tenant's daily cap invoices go to a
-person without one. How well this does is measured in `evals/`.
+without reading its documents. By default the cheapest model reads every
+invoice; optionally the strongest checks its pays where a mistake would cost
+most (`routing.py`). Every call is recorded at what it cost, and past the
+tenant's daily cap invoices go to a person without one. The defaults are what
+the benchmark in `evals/` supports.
 """
 
 from datetime import date, datetime
@@ -61,6 +62,7 @@ class PipelineOrchestrator:
         tenant_id: UUID,
         models: Optional[Callable[[str], LLMProvider]] = ClaudeCLI,
         scope: Optional[str] = None,
+        second_opinion: Optional[bool] = None,
         today: Optional[date] = None,
         exception_handler: Optional[ExceptionHandler] = None,
         audit_service: Optional[AuditService] = None,
@@ -73,6 +75,7 @@ class PipelineOrchestrator:
         self.scope = scope or settings.review_scope
         if self.scope not in ("flagged", "everything"):
             raise ValueError(f"review scope must be 'flagged' or 'everything', not {self.scope!r}")
+        self.second_opinion = settings.review_second_opinion if second_opinion is None else second_opinion
         self.today = today
         self.exception_handler = exception_handler or ExceptionHandler(db, tenant_id)
         self.audit_service = audit_service or AuditService(db, tenant_id)
@@ -148,7 +151,8 @@ class PipelineOrchestrator:
         file = await case_file_for(self.db, self.tenant_id, invoice, today=self.today, flags=flags)
         text = review.prompt(file)
         first = await self._ask(routing.FIRST, text, invoice, run)
-        if first is None or not routing.needs_second_opinion(first, invoice.total_amount or Decimal(0)):
+        if first is None or not self.second_opinion or \
+                not routing.needs_second_opinion(first, invoice.total_amount or Decimal(0)):
             return first
         return await self._ask(routing.SECOND, text, invoice, run)
 

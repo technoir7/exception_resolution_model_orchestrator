@@ -42,12 +42,12 @@ class FakeModel(LLMProvider):
     def get_cost_per_1k_tokens(self): raise NotImplementedError
 
 
-async def run(db, case, scope="flagged", **replies):
+async def run(db, case, scope="flagged", second_opinion=False, **replies):
     """Runs `case` with fake models answering `replies` (by model name)."""
     models = {name: FakeModel(r) for name, r in replies.items()}
     invoice = (await seed.load(db, TEST_TENANT_ID, [case]))[case["id"]]
     pipeline = PipelineOrchestrator(db, TEST_TENANT_ID, models=lambda name: models[name],
-                                    scope=scope, today=cases.AS_OF)
+                                    scope=scope, second_opinion=second_opinion, today=cases.AS_OF)
     result = await pipeline.run(invoice)
     return result, invoice, models
 
@@ -87,15 +87,27 @@ class TestWhatGetsPaid:
 
 
 class TestTheSecondOpinion:
-    async def test_a_pay_on_a_large_invoice_is_checked_by_the_stronger_model(self, db_session):
+    async def test_is_off_by_default_since_it_changed_no_decision_in_the_benchmark(self, db_session):
+        invoice = (await seed.load(db_session, TEST_TENANT_ID, [a("tax_correct")]))[a("tax_correct")["id"]]
+        assert PipelineOrchestrator(db_session, TEST_TENANT_ID).second_opinion is False
+
+    async def test_reads_every_invoice_by_default(self, db_session):
+        assert PipelineOrchestrator(db_session, TEST_TENANT_ID).scope == "everything"
+
+    async def test_without_it_the_cheap_models_pay_stands(self, db_session):
         result, _, models = await run(db_session, a("partial_delivery", large=True),
+                                      haiku=[verdict("pay")], opus=[])
+        assert result.state == PipelineState.COMPLETED
+
+    async def test_a_pay_on_a_large_invoice_is_checked_by_the_stronger_model(self, db_session):
+        result, _, models = await run(db_session, a("partial_delivery", large=True), second_opinion=True,
                                       haiku=[verdict("pay")], opus=[verdict("hold", reason="quantity")])
         assert result.state == PipelineState.EXCEPTION
         assert len(models["opus"].prompts) == 1
         assert len(await costs(db_session)) == 2
 
     async def test_a_hold_is_not_checked(self, db_session):
-        result, _, models = await run(db_session, a("price_increase", large=True),
+        result, _, models = await run(db_session, a("price_increase", large=True), second_opinion=True,
                                       haiku=[verdict("hold", reason="price")], opus=[])
         assert result.state == PipelineState.EXCEPTION
 

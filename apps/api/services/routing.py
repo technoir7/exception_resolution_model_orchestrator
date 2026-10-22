@@ -1,7 +1,9 @@
 """
-Which model's verdict decides an invoice.
+Which model's verdict decides an invoice, when a second opinion is on
+(REVIEW_SECOND_OPINION; off by default, since in the benchmark it never
+changed the cheap model's decision).
 
-The cheapest model reads every invoice the checks flag. A hold always stands:
+A hold always stands:
 it only sends the invoice to a person, and a second model could only turn it
 into a payment. A pay is checked by the strongest model when a mistake would
 be expensive or the cheap model is unsure, since a wrong payment is the error
