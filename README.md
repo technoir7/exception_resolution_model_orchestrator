@@ -81,7 +81,7 @@ no Docker and no model calls for the tests.
 
 ```bash
 uv venv && uv pip install -e ".[dev]"
-.venv/bin/python -m pytest apps/api/tests evals/tests      # 102 tests, on SQLite
+.venv/bin/python -m pytest apps/api/tests evals/tests      # 122 tests, on SQLite
 ```
 
 The benchmark needs the `claude` command, logged in:
