@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from apps.api.dependencies import get_tenant_context, get_current_user, TenantContext
 from apps.api.models.exception import ExceptionCase, ExceptionStatus, ExceptionCategory
@@ -20,6 +20,19 @@ from apps.api.schemas.exception import (
 from apps.api.services.exception_handler import RESOLUTIONS, ExceptionHandler
 
 router = APIRouter()
+
+
+async def _find(ctx: TenantContext, exception_id: UUID) -> ExceptionCase:
+    """The exception with its invoice loaded, as of now."""
+    exception = (await ctx.db.execute(
+        select(ExceptionCase)
+        .options(selectinload(ExceptionCase.invoice))
+        .where(ExceptionCase.id == exception_id, ExceptionCase.tenant_id == ctx.tenant_id)
+        .execution_options(populate_existing=True)
+    )).scalar_one_or_none()
+    if not exception:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exception not found")
+    return exception
 
 
 @router.get("", response_model=ExceptionListResponse)
@@ -61,7 +74,8 @@ async def list_exceptions(
     
     # Apply pagination
     offset = (page - 1) * page_size
-    query = query.order_by(ExceptionCase.created_at.desc()).offset(offset).limit(page_size)
+    query = (query.options(selectinload(ExceptionCase.invoice))
+             .order_by(ExceptionCase.created_at.desc()).offset(offset).limit(page_size))
     
     result = await ctx.db.execute(query)
     exceptions = result.scalars().all()
@@ -85,20 +99,7 @@ async def get_exception(
     ctx: TenantContext = Depends(get_tenant_context),
 ):
     """Get exception details by ID."""
-    query = select(ExceptionCase).where(
-        ExceptionCase.id == exception_id,
-        ExceptionCase.tenant_id == ctx.tenant_id,
-    )
-    result = await ctx.db.execute(query)
-    exception = result.scalar_one_or_none()
-    
-    if not exception:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exception not found",
-        )
-    
-    return ExceptionResponse.model_validate(exception)
+    return ExceptionResponse.model_validate(await _find(ctx, exception_id))
 
 
 @router.post("/{exception_id}/resolve", response_model=ExceptionResponse)
@@ -109,18 +110,7 @@ async def resolve_exception(
     current_user: TokenPayload = Depends(get_current_user),
 ):
     """Resolve an exception with human override."""
-    query = select(ExceptionCase).where(
-        ExceptionCase.id == exception_id,
-        ExceptionCase.tenant_id == ctx.tenant_id,
-    )
-    result = await ctx.db.execute(query)
-    exception = result.scalar_one_or_none()
-    
-    if not exception:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Exception not found",
-        )
+    exception = await _find(ctx, exception_id)
     
     if exception.status == ExceptionStatus.RESOLVED:
         raise HTTPException(
@@ -143,6 +133,4 @@ async def resolve_exception(
     )
     
     await ctx.db.commit()
-    await ctx.db.refresh(exception)
-    
-    return ExceptionResponse.model_validate(exception)
+    return ExceptionResponse.model_validate(await _find(ctx, exception_id))

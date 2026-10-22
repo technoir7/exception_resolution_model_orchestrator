@@ -14,6 +14,7 @@ from apps.api.models.exception import (
     ExceptionStatus,
     OwnerRole,
 )
+from apps.api.schemas.invoice import InvoiceSummary
 
 
 class ExceptionResponse(BaseModel):
@@ -21,6 +22,7 @@ class ExceptionResponse(BaseModel):
     id: UUID
     tenant_id: UUID
     invoice_id: UUID
+    invoice: Optional[InvoiceSummary] = None
     pipeline_run_id: Optional[UUID] = None
     
     # Classification

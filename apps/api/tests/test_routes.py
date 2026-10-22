@@ -146,3 +146,18 @@ class TestCost:
     async def test_of_an_unknown_invoice_is_not_found(self, api):
         reply = await api.get(f"/metrics/cost/invoices/{uuid4()}", headers=await login(api))
         assert reply.status_code == 404
+
+
+class TestTheQueue:
+    async def test_says_which_invoice_each_exception_holds(self, api, db_session):
+        held, _ = await TestResolvingAnException().held(db_session)
+        [item] = (await api.get("/exceptions?status=open", headers=await login(api))).json()["items"]
+        assert item["invoice"]["invoice_number"] == held.invoice_number
+        assert item["invoice"]["vendor_name"] == held.vendor_name
+        assert Decimal(item["invoice"]["total_amount"]) == held.total_amount
+
+    async def test_and_so_does_one_exception_and_its_resolution(self, api, db_session):
+        held, case = await TestResolvingAnException().held(db_session)
+        assert (await api.get(f"/exceptions/{case.id}", headers=await login(api))).json()["invoice"]["id"] == str(held.id)
+        resolved = await TestResolvingAnException().resolve(api, case, "approve")
+        assert resolved.json()["invoice"]["status"] == "approved"
