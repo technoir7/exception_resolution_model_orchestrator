@@ -1,5 +1,7 @@
 # AP Reconciliation Orchestrator
 
+[![CI](https://github.com/technoir7/exception_resolution_model_orchestrator/actions/workflows/ci.yml/badge.svg)](https://github.com/technoir7/exception_resolution_model_orchestrator/actions/workflows/ci.yml)
+
 Checks supplier invoices before they are paid. An invoice arrives as data or
 as a PDF, which Claude reads. Fixed rules compare each invoice with its
 purchase order, goods receipt and the vendor's history; a Claude model then
