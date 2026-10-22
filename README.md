@@ -82,7 +82,8 @@ payments it would have stopped, the good invoices it would have sent to a
 person, and the cost per invoice. Only when those numbers are good enough
 should its decisions reach a payment. `evals/` shows the method: the plan
 written before any model runs, every answer recorded once, and every way of
-processing scored on the same invoices.
+processing scored on the same invoices. [For finance teams](docs/for-finance-teams.md)
+puts the same in business terms.
 
 ## How it works
 
