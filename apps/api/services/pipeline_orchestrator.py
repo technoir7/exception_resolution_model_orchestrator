@@ -25,14 +25,14 @@ from apps.api.models.audit import AuditStep
 from apps.api.models.exception import ExceptionCategory, ExceptionSeverity
 from apps.api.models.invoice import Invoice, InvoiceStatus
 from apps.api.models.pipeline import InvoicePipelineRun, PipelineState
-from apps.api.services import review, routing
+from apps.api.services import claude, review, routing
 from apps.api.services.audit_service import AuditService
 from apps.api.services.case_file import case_file_for
-from apps.api.services.claude_provider import TIER_MODELS, ClaudeCLI, ClaudeCLIError
+from apps.api.services.claude_provider import TIER_MODELS
 from apps.api.services.cost_service import CostService
 from apps.api.services.exception_handler import ExceptionHandler
 from apps.api.services.flags import describe
-from apps.api.services.llm_provider import LLMProvider
+from apps.api.services.llm_provider import LLMProvider, ModelUnavailable
 from apps.api.services.matching_engine import MatchingEngine
 from apps.api.services.rules_engine import RulesEngine
 
@@ -70,7 +70,7 @@ class PipelineOrchestrator:
         self,
         db: AsyncSession,
         tenant_id: UUID,
-        models: Optional[Callable[[str], LLMProvider]] = ClaudeCLI,
+        models: Optional[Callable[[str], LLMProvider]] = claude.model,
         scope: Optional[str] = None,
         second_opinion: Optional[bool] = None,
         today: Optional[date] = None,
@@ -179,7 +179,7 @@ class PipelineOrchestrator:
             started = datetime.utcnow()
             try:
                 response = await provider.complete(text)
-            except ClaudeCLIError as error:
+            except ModelUnavailable as error:
                 self.logger.error("Model call failed", model=model, error=str(error))
                 return None
             await self.cost_service.record_llm_call(

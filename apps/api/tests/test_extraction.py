@@ -193,8 +193,8 @@ class TestTheEndpoint:
         from apps.api.main import app
         from apps.api.routes import ingest
 
-        def send(body, reply=json.dumps(PRINTED)):
-            monkeypatch.setattr(ingest, "ClaudeCLI", lambda model: FakeReader(reply))
+        def send(body, reply=json.dumps(PRINTED), reader=None):
+            monkeypatch.setattr(ingest.claude, "model", lambda model: reader or FakeReader(reply))
             app.dependency_overrides[get_tenant_context] = lambda: TenantContext(TEST_TENANT_ID, db_session)
             client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
             return client.post("/ingest/invoice-pdf?filename=inv.pdf", content=body,
@@ -220,6 +220,16 @@ class TestTheEndpoint:
         from apps.api.config import settings
         monkeypatch.setattr(settings, "review_with_models", False)
         assert (await post(PDF)).status_code == 503
+
+    async def test_says_when_the_model_cannot_be_reached(self, post):
+        from apps.api.services.llm_provider import ModelUnavailable
+
+        class Down:
+            async def read(self, document, instruction):
+                raise ModelUnavailable("the Claude API answered 529: Overloaded")
+
+        response = await post(PDF, reader=Down())
+        assert response.status_code == 502 and "Overloaded" in response.json()["detail"]
 
 
 class TestCurrency:

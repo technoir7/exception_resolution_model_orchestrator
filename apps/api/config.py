@@ -6,7 +6,7 @@ All configuration is loaded from environment variables with sensible defaults.
 
 from decimal import Decimal
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -86,6 +86,14 @@ class Settings(BaseSettings):
         description="Have the strongest model check large or unsure pays (apps/api/services/routing.py)",
         alias="REVIEW_SECOND_OPINION",
     )
+
+    # How Claude is called (apps/api/services/claude.py)
+    claude_via: str = Field(
+        default="cli",
+        description="'cli': the `claude` command on your login; 'api': the Claude API with ANTHROPIC_API_KEY",
+        alias="CLAUDE_VIA",
+    )
+    anthropic_api_key: Optional[str] = Field(default=None, alias="ANTHROPIC_API_KEY", repr=False)
 
     # LLM Router Policy - Cost caps
     router_tenant_daily_cap: Decimal = Field(

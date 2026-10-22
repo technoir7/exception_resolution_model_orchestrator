@@ -52,5 +52,8 @@ No notification when an exception nears or passes its deadline.
 
 ## Production deployment
 
-Logins are demo accounts with a development secret. A deployment would need
-real identity, secrets management, and CI.
+Logins are demo accounts with a development secret, and roles are not
+enforced: any user can resolve any exception. A deployment would need real
+identity with each exception's role checked, and secrets management. The API
+route to Claude has not yet been run against the live API; a short benchmark
+round through it would confirm it decides as the command did.

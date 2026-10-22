@@ -19,7 +19,7 @@ from typing import Awaitable, Callable, List, Optional, Tuple, Type
 from pydantic import BaseModel
 
 from apps.api.models.cost import ModelTier
-from apps.api.services.llm_provider import LLMProvider, LLMResponse
+from apps.api.services.llm_provider import LLMProvider, LLMResponse, ModelUnavailable
 
 # The CLI's aliases follow the newest model of each size.
 TIER_MODELS = {ModelTier.TIER_A: "haiku", ModelTier.TIER_B: "sonnet", ModelTier.TIER_C: "opus"}
@@ -30,7 +30,7 @@ TIMEOUT_SECONDS = 180
 Run = Callable[[List[str], str], Awaitable[Tuple[int, str, str]]]
 
 
-class ClaudeCLIError(Exception):
+class ClaudeCLIError(ModelUnavailable):
     pass
 
 

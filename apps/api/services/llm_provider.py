@@ -15,6 +15,10 @@ from apps.api.models.cost import ModelTier
 logger = structlog.get_logger()
 
 
+class ModelUnavailable(Exception):
+    """The model could not be reached, or answered with an error."""
+
+
 @dataclass
 class LLMResponse:
     """Response from an LLM call."""

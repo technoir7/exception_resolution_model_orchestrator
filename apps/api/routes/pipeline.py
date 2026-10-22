@@ -18,6 +18,7 @@ from apps.api.schemas.pipeline import (
     BatchRunRequest,
     BatchRunResponse,
 )
+from apps.api.services.llm_provider import ModelUnavailable
 from apps.api.services.pipeline_orchestrator import PipelineOrchestrator
 
 router = APIRouter()
@@ -60,7 +61,12 @@ async def run_pipeline(
     
     # Run pipeline
     orchestrator = PipelineOrchestrator(ctx.db, ctx.tenant_id)
-    run = await orchestrator.run(invoice)
+    try:
+        run = await orchestrator.run(invoice)
+    except ModelUnavailable as error:
+        # Raised only when Claude is set up wrong; a model that is merely
+        # unreachable sends the invoice to a person instead.
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(error))
     
     await ctx.db.commit()
     await ctx.db.refresh(run)

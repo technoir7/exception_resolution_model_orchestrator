@@ -103,9 +103,14 @@ and the cost figures were estimates; both are now real.
    made it: approve pays it, reject rejects it, escalate leaves it held for
    someone senior, reprocess runs the checks again.
 
-Claude is called through the `claude` command on your own login, so a Claude
-subscription pays for the reviews and no API key is needed. A hosted copy
-would call the API instead.
+Claude is called one of two ways (`claude.py`). By default, through the
+`claude` command on your own login, so a Claude subscription pays and no API
+key is needed; the command reports each call's cost at API list prices. Or,
+with `CLAUDE_VIA=api` and a key, through the Claude API (`anthropic_provider.py`),
+for a server or Docker; each call is then priced from its tokens at
+Anthropic's list prices. The benchmark ran through the command; the API
+route sends the same request and is tested against the API's documented
+replies, not yet measured against the live API.
 
 ## Running it
 
@@ -114,7 +119,7 @@ no Docker and no model calls for the tests.
 
 ```bash
 uv venv && uv pip install -e ".[dev]"
-.venv/bin/python -m pytest apps/api/tests evals/tests      # 394 tests, on SQLite
+.venv/bin/python -m pytest apps/api/tests evals/tests      # 411 tests, on SQLite
 cd apps/web && pnpm install && pnpm test && pnpm build      # the dashboard: Node 22.18+
 ```
 
@@ -136,11 +141,12 @@ make seed    # sample vendors, POs and receipts
 make demo    # process the sample invoices
 ```
 
-The `claude` command is not in the Docker image, so there the review is off
-(`REVIEW_WITH_MODELS=false`), PDFs are refused, and the rules decide alone.
-That shows their weakness: all ten sample invoices are flagged, the clean ones
-because their sales tax takes them over the pre-tax PO total, so all ten go to
-a person.
+The `claude` command is not in the Docker image, so there Claude is called
+through the API, and only with a key:
+`ANTHROPIC_API_KEY=... REVIEW_WITH_MODELS=true make dev`. Without one the
+review is off, PDFs are refused, and the rules decide alone. That shows their
+weakness: all ten sample invoices are flagged, the clean ones because their
+sales tax takes them over the pre-tax PO total, so all ten go to a person.
 
 To have Claude review them, run the demo and the API on your machine, against
 the database in Docker: `.venv/bin/python scripts/demo.py` and `make dev-api`.
@@ -172,6 +178,8 @@ Demo logins: `controller`, `ap_manager` and `bpo_operator`, password `demo123`.
 | Variable | Default | |
 |---|---|---|
 | `REVIEW_WITH_MODELS` | `true` | Off, the rules decide alone |
+| `CLAUDE_VIA` | `cli` | Or `api`: the Claude API, with `ANTHROPIC_API_KEY` |
+| `ANTHROPIC_API_KEY` | none | Needed only with `CLAUDE_VIA=api` |
 | `REVIEW_SCOPE` | `everything` | Or `flagged`: the model reads only what the rules flag |
 | `REVIEW_SECOND_OPINION` | `false` | Opus checks Haiku's pays of $5,000 or more, or below 0.9 confidence |
 | `ROUTER_TENANT_DAILY_CAP` | `100.00` | Model spend per tenant per day, in USD; past it, invoices go to a person |

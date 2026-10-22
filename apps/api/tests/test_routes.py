@@ -193,3 +193,11 @@ class TestProcessing:
         reply = await api.post("/pipeline/run_batch", json={"invoice_ids": [str(stored)]}, headers=await login(api))
         assert reply.status_code == 200, reply.text
         assert reply.json()["queued"] == 1
+
+    async def test_without_the_key_the_api_needs_says_so(self, api, stored, monkeypatch):
+        from apps.api.config import settings
+        monkeypatch.setattr(settings, "review_with_models", True)
+        monkeypatch.setattr(settings, "claude_via", "api")
+        monkeypatch.setattr(settings, "anthropic_api_key", None)
+        reply = await api.post(f"/pipeline/run/{stored}", headers=await login(api))
+        assert reply.status_code == 502 and "ANTHROPIC_API_KEY" in reply.json()["detail"]

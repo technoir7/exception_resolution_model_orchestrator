@@ -10,8 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from apps.api.config import settings
 from apps.api.dependencies import TenantContext, get_tenant_context
 from apps.api.schemas.invoice import InvoiceCreate, InvoiceResponse
-from apps.api.services import extraction, intake
-from apps.api.services.claude_provider import ClaudeCLI, ClaudeCLIError
+from apps.api.services import claude, extraction, intake
+from apps.api.services.llm_provider import ModelUnavailable
 
 
 router = APIRouter()
@@ -51,7 +51,8 @@ async def ingest_invoice_pdf(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail="reading PDFs needs a model (REVIEW_WITH_MODELS is off)")
     try:
-        invoice = await intake.ingest_pdf(ctx.db, ctx.tenant_id, await request.body(), ClaudeCLI(intake.READER), filename)
+        invoice = await intake.ingest_pdf(ctx.db, ctx.tenant_id, await request.body(), claude.model(intake.READER),
+                                          filename)
     except intake.NotAcceptable as error:
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(error))
     except (extraction.UnreadableInvoice, intake.UnknownVendor) as error:
@@ -59,7 +60,7 @@ async def ingest_invoice_pdf(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error))
     except intake.SpendCapReached as error:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(error))
-    except ClaudeCLIError as error:
+    except ModelUnavailable as error:
         await ctx.db.commit()
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"the model could not be reached: {error}")
     await ctx.db.commit()
