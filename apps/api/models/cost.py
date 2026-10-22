@@ -26,9 +26,9 @@ class CostEventType(str, Enum):
 
 class ModelTier(str, Enum):
     """LLM model tiers."""
-    TIER_A = "tier_a"  # Cheap/fast (e.g., GPT-3.5-turbo)
-    TIER_B = "tier_b"  # Mid-tier (e.g., GPT-4-mini)
-    TIER_C = "tier_c"  # Premium (e.g., GPT-4)
+    TIER_A = "tier_a"  # Cheap and fast (Claude Haiku)
+    TIER_B = "tier_b"  # Mid-tier (Claude Sonnet)
+    TIER_C = "tier_c"  # Strongest (Claude Opus)
 
 
 class CostEvent(TenantScopedBase):

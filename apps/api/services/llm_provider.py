@@ -37,6 +37,8 @@ class LLMResponse:
     latency_ms: int = 0
     was_cached: bool = False
     raw_response: Optional[Dict[str, Any]] = None
+    # What the call cost at list prices, where the provider reports it.
+    cost_usd: Optional[Decimal] = None
 
 
 class LLMProvider(ABC):
