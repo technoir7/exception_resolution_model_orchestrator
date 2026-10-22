@@ -12,11 +12,19 @@ anything; the answer follows from how the case is built, and
 Each case has its own vendor, so one case's history can never make another
 look like a duplicate. Cases are dated against a fixed day (`AS_OF`), so the
 rules see the same thing whenever they run.
+
+Round 1's audit found ways to guess without reading, and they are gone from
+round 2 on: a vendor's notes can mislead ("Second notice" on an invoice never
+paid, "Partial shipment" on one that bills more than arrived); overbilling
+also shows up as a quantity off the PO, as a partial delivery does; a
+resubmitted invoice may keep its number; paid history is numbered like the
+vendor's other invoices; freight lands near its cap on both sides; and
+vendors sell what their names say.
 """
 
 import random
 from datetime import date, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 from typing import Dict, List
 
 AS_OF = date(2026, 10, 1)
@@ -70,50 +78,70 @@ REASONS = {
 
 CENT = Decimal("0.01")
 
-ITEMS = [
-    ("Hex bolt M10 x 40, zinc", 0.42, 0.95, 200, 2000),
-    ("Hydraulic hose assembly 1/2 in", 38, 74, 4, 40),
-    ("Safety glasses, clear anti-fog", 3.1, 6.8, 24, 300),
-    ("Pallet wrap film 18 in x 1500 ft", 16, 29, 10, 120),
-    ("Copy paper, letter, 10-ream carton", 41, 58, 5, 60),
-    ("Toner cartridge, black, high yield", 89, 165, 2, 30),
-    ("Cordless drill 20V kit", 129, 219, 2, 12),
-    ("Cable ties 8 in, pack of 100", 4.2, 9.5, 20, 200),
-    ("Industrial degreaser, 5 gal", 64, 112, 2, 24),
-    ("Bearing 6205-2RS", 5.5, 12.4, 20, 250),
-    ("LED high-bay fixture 150W", 118, 196, 4, 40),
-    ("Shipping cartons 18x12x12, bundle of 25", 27, 44, 6, 80),
-    ("Shop towels, box of 200", 21, 36, 6, 60),
-    ("Stainless sheet 16 ga 4x8", 186, 289, 2, 20),
-    ("Ethernet patch cable Cat6 10 ft", 4.6, 9.9, 20, 300),
-    ("Work gloves, cut level A4, pair", 7.8, 15.5, 24, 240),
-    ("Label rolls 4x6 thermal", 11, 19, 10, 120),
-    ("Air filter 20x25x4 MERV 13", 23, 41, 6, 72),
-    ("Fork truck tire, press-on", 210, 340, 2, 8),
-    ("Laptop docking station USB-C", 149, 259, 2, 25),
-]
+# What each trade sells: (description, low price, high price, low qty, high qty).
+GOODS = {
+    "Industrial Supply": [
+        ("Hex bolt M10 x 40, zinc", 0.42, 0.95, 200, 2000),
+        ("Hydraulic hose assembly 1/2 in", 38, 74, 4, 40),
+        ("Industrial degreaser, 5 gal", 64, 112, 2, 24),
+        ("Bearing 6205-2RS", 5.5, 12.4, 20, 250),
+        ("Shop towels, box of 200", 21, 36, 6, 60),
+        ("Stainless sheet 16 ga 4x8", 186, 289, 2, 20),
+        ("Fork truck tire, press-on", 210, 340, 2, 8),
+        ("Cordless drill 20V kit", 129, 219, 2, 12),
+    ],
+    "Packaging": [
+        ("Pallet wrap film 18 in x 1500 ft", 16, 29, 10, 120),
+        ("Shipping cartons 18x12x12, bundle of 25", 27, 44, 6, 80),
+        ("Label rolls 4x6 thermal", 11, 19, 10, 120),
+        ("Packing tape 2 in x 110 yd, case of 36", 38, 62, 4, 40),
+        ("Air pillow void fill, roll", 44, 79, 2, 30),
+    ],
+    "Office Products": [
+        ("Copy paper, letter, 10-ream carton", 41, 58, 5, 60),
+        ("Toner cartridge, black, high yield", 89, 165, 2, 30),
+        ("Laptop docking station USB-C", 149, 259, 2, 25),
+        ("Ethernet patch cable Cat6 10 ft", 4.6, 9.9, 20, 300),
+        ("Ergonomic mesh desk chair", 189, 329, 2, 15),
+    ],
+    "Electrical": [
+        ("LED high-bay fixture 150W", 118, 196, 4, 40),
+        ("Cable ties 8 in, pack of 100", 4.2, 9.5, 20, 200),
+        ("THHN wire 12 AWG, 500 ft spool", 64, 118, 2, 30),
+        ("Circuit breaker 20A single pole", 6.5, 14, 10, 120),
+        ("Conduit EMT 3/4 in x 10 ft", 7.8, 13.9, 20, 200),
+    ],
+    "Safety Products": [
+        ("Safety glasses, clear anti-fog", 3.1, 6.8, 24, 300),
+        ("Work gloves, cut level A4, pair", 7.8, 15.5, 24, 240),
+        ("Hi-vis vest, class 2", 6.2, 13.5, 12, 200),
+        ("Earplugs, box of 200 pairs", 24, 39, 4, 50),
+        ("First aid kit, 50-person", 45, 88, 2, 20),
+    ],
+}
 
+# Goods bought by the case and billed by the each: (name, unit, pack, low, high, trade).
 PACKED = [
-    ("Nitrile exam gloves", "box of 100", 10, 7.2, 11.5),
-    ("Bottled water 16.9 oz", "bottle", 24, 0.38, 0.69),
-    ("AA alkaline batteries", "4-pack", 12, 3.9, 6.9),
-    ("Floor marking tape 2 in", "roll", 12, 8.5, 14.0),
-    ("Disinfecting wipes", "canister", 6, 5.2, 8.9),
-    ("Printer paper, letter", "ream", 10, 4.4, 6.6),
+    ("Nitrile exam gloves", "box", 10, 7.2, 11.5, "Safety Products"),
+    ("Bottled water 16.9 oz", "bottle", 24, 0.38, 0.69, "Office Products"),
+    ("AA alkaline batteries", "4-pack", 12, 3.9, 6.9, "Electrical"),
+    ("Floor marking tape 2 in", "roll", 12, 8.5, 14.0, "Safety Products"),
+    ("Disinfecting wipes", "canister", 6, 5.2, 8.9, "Safety Products"),
+    ("Printer paper, letter", "ream", 10, 4.4, 6.6, "Office Products"),
 ]
+PACK_ORDERED = ["{name}, case of {pack} ({unit}s)", "{name} - CS/{pack}", "{name}, {pack} {unit}s per case"]
+PACK_BILLED = ["{name} ({unit})", "{name}, per {unit}", "{name} - EA"]
 
 SERVICES = [
-    ("Janitorial service, weekly", 380, 1450),
-    ("Security patrol, weekly", 900, 2600),
-    ("Grounds maintenance, weekly", 260, 980),
-    ("Equipment rental: scissor lift, weekly", 410, 760),
-    ("Waste hauling, weekly", 180, 640),
+    ("Janitorial service", 380, 1450, "Facility Services"),
+    ("Security patrol", 900, 2600, "Security Services"),
+    ("Grounds maintenance", 260, 980, "Grounds Care"),
+    ("Scissor lift rental", 410, 760, "Equipment Rental"),
+    ("Waste hauling", 180, 640, "Waste Services"),
 ]
 
 NAME_FIRST = ["Northwind", "Bluegate", "Cedar Ridge", "Harbor", "Summit", "Ironleaf", "Prairie", "Keystone",
               "Redwood", "Lakeshore", "Granite", "Silverline", "Oakmont", "Pioneer", "Riverbend", "Westfield"]
-NAME_TRADE = ["Industrial Supply", "Facility Services", "Packaging", "Fasteners", "Office Products",
-              "Electrical", "Safety Products", "Distribution", "Maintenance", "Equipment Rental"]
 NAME_SUFFIX = ["Inc", "LLC", "Co", "Corp", "Ltd"]
 BANKS = ["First Harbor Bank", "Mercantile Trust", "Pacific Commerce Bank", "Union Plains Bank",
          "Citizens Savings", "Heritage National Bank", "Summit Credit Union"]
@@ -144,6 +172,15 @@ BANK_CHANGED = [
     "Please note: our bank details have changed. Kindly update your records and remit to the account below.",
     "IMPORTANT - new remittance details effective immediately. Payments to the old account will be returned.",
 ]
+# Notes that say nothing about whether to pay, on every kind of invoice.
+NEUTRAL = [
+    "Thank you for your business.",
+    "Please include the invoice number with your payment.",
+    "Questions about this invoice? Contact our accounts receivable team.",
+    "ACH payment preferred.",
+]
+# A reminder about an invoice never paid is no reason to hold it.
+REMINDER = ["Second notice.", "Reminder: this invoice is now due."]
 
 
 def _money(value) -> Decimal:
@@ -166,31 +203,49 @@ def _subtotal(lines) -> Decimal:
 class _Builder:
     def __init__(self, rng: random.Random, number: int, kind: str):
         self.rng, self.n, self.kind = rng, number, kind
-        self.vendor = self._vendor(number)
+        if kind == "recurring_service":
+            self.service = rng.choice(SERVICES)
+            trade = self.service[3]
+        elif kind == "unit_of_measure":
+            self.packed = rng.choice(PACKED)
+            trade = self.packed[5]
+        else:
+            trade = rng.choice(sorted(GOODS))
+        self.trade = trade
+        self.vendor = self._vendor(number, trade)
         start = AS_OF - timedelta(days=300)
         self.po_date = start + timedelta(days=rng.randint(0, 220))
         self.receipt_date = self.po_date + timedelta(days=rng.randint(4, 18))
-        self.invoice_date = self.receipt_date + timedelta(days=rng.randint(0, 6))
+        self.invoice_date = self.receipt_date + timedelta(days=rng.randint(1, 6))
         prefix = "".join(w[0] for w in self.vendor["name"].split()[:2]).upper()
-        self.invoice_number = rng.choice([
-            f"INV-{rng.randint(10000, 99999)}", f"{prefix}-{rng.randint(1000, 9999)}", f"{rng.randint(100000, 999999)}",
-        ])
-        self.po_number = f"PO-{self.po_date.year}-{number:04d}"
+        self.number_format = rng.choice(["INV-{:05d}", prefix + "-{:04d}", "{:06d}"])
+        low = {"INV-{:05d}": 10000, "{:06d}": 100000}.get(self.number_format, 1000)
+        self.number_base = rng.randint(low + 500, low * 9)
+        self.invoice_number = self.number_format.format(self.number_base)
+        # Unique across the set (the database requires it), without counting up.
+        self.po_number = f"PO-{self.po_date.year}-{(number * 37) % 9000 + 1000}"
 
-    def _vendor(self, number: int) -> Dict:
+    def _vendor(self, number: int, trade: str) -> Dict:
         rng = self.rng
-        name = f"{rng.choice(NAME_FIRST)} {rng.choice(NAME_TRADE)} {rng.choice(NAME_SUFFIX)}"
         return {
             "id": f"V{number:04d}",
-            "name": name,
+            "name": f"{rng.choice(NAME_FIRST)} {trade} {rng.choice(NAME_SUFFIX)}",
             "tax_id": f"{rng.randint(10, 99)}-{rng.randint(1000000, 9999999)}",
             "remit_to": {"bank": rng.choice(BANKS), "account_last4": f"{rng.randint(0, 9999):04d}"},
             "payment_terms": rng.choice(["NET30", "NET45"]),
         }
 
+    def note(self, *specific: str, neutral: float = 0.3) -> str:
+        """One of the notes this kind of invoice might carry, a neutral one, or none."""
+        roll = self.rng.random()
+        if roll < neutral:
+            return self.rng.choice(NEUTRAL)
+        return self.rng.choice(list(specific)) if specific else ""
+
     def goods(self, count=None) -> List[Dict]:
         rng = self.rng
-        picks = rng.sample(ITEMS, count or rng.randint(1, 3))
+        catalogue = GOODS[self.trade]
+        picks = rng.sample(catalogue, count or rng.randint(1, 3))
         return [
             _line(i, name, rng.randint(lo_q, hi_q), _money(rng.uniform(lo_p, hi_p)))
             for i, (name, lo_p, hi_p, lo_q, hi_q) in enumerate(picks, 1)
@@ -225,7 +280,7 @@ class _Builder:
         received = received or {l["line_number"]: l["quantity"] for l in po_lines}
         prices = {l["line_number"]: Decimal(l["unit_price"]) for l in po_lines}
         return {
-            "receipt_number": f"RCV-{self.n:05d}",
+            "receipt_number": f"RCV-{(self.n * 53) % 90000 + 10000}",
             "receipt_date": self.receipt_date.isoformat(),
             "po_number": self.po_number,
             "vendor_id": self.vendor["id"],
@@ -259,17 +314,25 @@ class _Builder:
         }
 
     def background(self) -> List[Dict]:
-        """Paid invoices from the vendor for earlier, unrelated orders, so that
-        a history alone says nothing about the case."""
+        """Paid invoices from the vendor for its earlier orders, numbered as its
+        invoices are, so that a history alone says nothing about the case."""
+        if self.trade not in GOODS:
+            return []
         out = []
-        for i in range(self.rng.choice([0, 0, 1, 2])):
+        count = self.rng.choice([0, 1, 1, 2])
+        offsets = sorted(self.rng.sample(range(5, 120), count))
+        for i in range(count):
             on = self.invoice_date - timedelta(days=self.rng.randint(20, 90))
             lines = self.goods()
             subtotal = _subtotal(lines)
+            while True:
+                po_number = f"PO-{on.year}-{self.rng.randint(1000, 9999)}"
+                if po_number != self.po_number:
+                    break
             out.append({
-                "invoice_number": f"H{self.n:04d}-{i + 1}",
+                "invoice_number": self.number_format.format(self.number_base - offsets[i]),
                 "invoice_date": on.isoformat(),
-                "po_number": f"PO-{on.year}-{self.n:04d}-{i + 1}",
+                "po_number": po_number,
                 "subtotal": _s(subtotal), "tax_amount": "0.00", "total_amount": _s(subtotal),
                 "line_items": lines, "status": "paid",
             })
@@ -278,11 +341,11 @@ class _Builder:
 
 def _round_up(amount: Decimal) -> Decimal:
     """Caps are round sums, as a buyer would write them."""
-    return Decimal(25) * -(-amount // 25)
+    return Decimal(25) * (amount / 25).to_integral_value(rounding=ROUND_CEILING)
 
 
 def _round_down(amount: Decimal) -> Decimal:
-    return max(Decimal(25), Decimal(25) * (amount // 25))
+    return Decimal(25) * (amount / 25).to_integral_value(rounding=ROUND_FLOOR)
 
 
 def _pct(rate: Decimal) -> str:
@@ -293,9 +356,9 @@ def _tax(subtotal: Decimal, rate: Decimal) -> Decimal:
     return _money(subtotal * rate)
 
 
-def _similar_number(number: str, rng: random.Random) -> str:
-    """How a resubmitted invoice's number tends to differ from the original's."""
-    variants = [number + "-R", number + "A", number + "-1"]
+def _resubmitted_number(number: str, rng: random.Random) -> str:
+    """A resubmitted invoice often keeps its number, or nearly."""
+    variants = [number, number, number + "-R", number + "A", number + "-1"]
     if "-" in number:
         variants.append(number.replace("-", ""))
     return rng.choice(variants)
@@ -320,7 +383,8 @@ def _build(rng: random.Random, number: int, kind: str) -> Dict:
     if kind == "clean":
         lines = b.goods()
         po = b.po(lines, freight=rng.choice(["included", "capped"]), cap=Decimal(25 * rng.randint(3, 10)))
-        receipt, invoice = b.receipt(lines), b.invoice([dict(l) for l in lines])
+        receipt = b.receipt(lines)
+        invoice = b.invoice([dict(l) for l in lines], notes=b.note("", "", "", *REMINDER))
 
     elif kind in ("partial_delivery", "overbilled_quantity"):
         lines = b.goods()
@@ -333,32 +397,34 @@ def _build(rng: random.Random, number: int, kind: str) -> Dict:
                 break
         po, receipt = b.po(lines), b.receipt(lines, received)
         if kind == "partial_delivery":
-            billed = [_line(l["line_number"], l["description"], received[l["line_number"]], Decimal(l["unit_price"]))
-                      for l in lines]
-            note = rng.choice(["", "Partial shipment; balance to follow.", "Backordered items will ship separately."])
+            billed = {n: q for n, q in received.items()}
+            note = b.note("", "Partial shipment; balance to follow.", "Backordered items will ship separately.")
         else:
-            billed = [
-                _line(l["line_number"], l["description"],
-                      l["quantity"] if l is short or received[l["line_number"]] == l["quantity"]
-                      else received[l["line_number"]], Decimal(l["unit_price"]))
-                for l in lines
-            ]
-            note = ""
-        invoice = b.invoice(billed, notes=note)
+            got, ordered = received[short["line_number"]], short["quantity"]
+            # Either the whole order, or more than arrived but less than ordered.
+            billed = {n: q for n, q in received.items()}
+            billed[short["line_number"]] = rng.choice(
+                [ordered, rng.randint(min(ordered, max(got + 1, int(got * 1.15) + 1)), ordered)])
+            note = b.note("", "", "Partial shipment; balance to follow.")
+        invoice = b.invoice([_line(l["line_number"], l["description"], billed[l["line_number"]],
+                                   Decimal(l["unit_price"])) for l in lines], notes=note)
 
     elif kind in ("freight_allowed", "freight_not_allowed"):
         lines = b.goods()
         subtotal = _subtotal(lines)
         charge = _money(subtotal * Decimal(str(rng.uniform(0.02, 0.08))) + rng.randint(15, 40))
+        # Freight lands near its cap on either side, so the numbers must be read.
         if kind == "freight_allowed":
-            po = b.po(lines, freight="capped", cap=_round_up(charge + rng.randint(1, 100)))
-        elif rng.random() < 0.5:
-            po = b.po(lines, freight="included")
+            po = b.po(lines, freight="capped", cap=_round_up(charge + rng.randint(0, 40)))
         else:
-            po = b.po(lines, freight="capped", cap=_round_down(charge * Decimal(str(rng.uniform(0.4, 0.8)))))
+            cap = _round_down(charge * Decimal(str(rng.uniform(0.7, 0.98))))
+            po = b.po(lines, freight="included") if rng.random() < 0.5 or cap < 25 else \
+                b.po(lines, freight="capped", cap=cap)
         freight_line = _line(len(lines) + 1, rng.choice(["Freight", "Shipping & handling", "Freight charges"]),
                              1, charge, is_freight=True)
-        receipt, invoice = b.receipt(lines), b.invoice([dict(l) for l in lines] + [freight_line])
+        receipt = b.receipt(lines)
+        invoice = b.invoice([dict(l) for l in lines] + [freight_line],
+                            notes=b.note("", "", *REMINDER) if kind == "freight_allowed" else b.note(""))
 
     elif kind in ("tax_correct", "tax_wrong"):
         lines = b.goods()
@@ -372,35 +438,35 @@ def _build(rng: random.Random, number: int, kind: str) -> Dict:
             charged = Decimal(rng.choice([r for r in ("0.0725", "0.0825", "0.0875", "0.095") if Decimal(r) > po_rate]))
             po = b.po(lines, tax_rate=po_rate)
         receipt = b.receipt(lines)
-        invoice = b.invoice([dict(l) for l in lines], tax=_tax(_subtotal(lines), charged))
+        invoice = b.invoice([dict(l) for l in lines], tax=_tax(_subtotal(lines), charged),
+                            notes=b.note("", "", *REMINDER) if kind == "tax_correct" else b.note(""))
 
     elif kind == "recurring_service":
-        name, lo, hi = rng.choice(SERVICES)
+        name, lo, hi, _ = b.service
         weekly = _money(rng.uniform(lo, hi))
         weeks = rng.randint(8, 26)
-        po = b.po([_line(1, name, weeks, weekly)])
+        po = b.po([_line(1, f"{name}, weekly", weeks, weekly)])
         receipt = None
         week = b.invoice_date - timedelta(days=b.invoice_date.weekday())
-        base = rng.randint(1000, 9000)
-        prefix = "".join(w[0] for w in b.vendor["name"].split()[:2]).upper()
-        previous_number, number = f"{prefix}-{base}", f"{prefix}-{base + 1}"
         def bill(start):
-            return [_line(1, f"{name.split(',')[0]}, week of {start.isoformat()}", 1, weekly)]
-        previous = b.invoice(bill(week - timedelta(days=7)), number=previous_number,
+            return [_line(1, f"{name}, week of {start.isoformat()}", 1, weekly)]
+        previous = b.invoice(bill(week - timedelta(days=7)), number=b.number_format.format(b.number_base - 1),
                              on=b.invoice_date - timedelta(days=7),
                              service_period=(week - timedelta(days=7)).isoformat())
         previous["status"] = "paid"
         history = [previous]
-        invoice = b.invoice(bill(week), number=number, service_period=week.isoformat())
+        invoice = b.invoice(bill(week), service_period=week.isoformat(), notes=b.note(""))
 
     elif kind == "unit_of_measure":
-        name, unit, pack, lo, hi = rng.choice(PACKED)
+        name, unit, pack, lo, hi, _ = b.packed
         each = _money(rng.uniform(lo, hi))
         cases_ordered = rng.randint(6, 40)
-        po_line = _line(1, f"{name}, case of {pack} ({unit})", cases_ordered, each * pack, pack_size=pack, unit="case")
+        ordered_as = rng.choice(PACK_ORDERED).format(name=name, pack=pack, unit=unit)
+        po_line = _line(1, ordered_as, cases_ordered, each * pack, pack_size=pack, unit="case")
         po = b.po([po_line])
         receipt = b.receipt([po_line])
-        invoice = b.invoice([_line(1, f"{name} ({unit})", cases_ordered * pack, each)])
+        billed_as = rng.choice(PACK_BILLED).format(name=name, unit=unit)
+        invoice = b.invoice([_line(1, billed_as, cases_ordered * pack, each)], notes=b.note(""))
 
     elif kind == "price_increase":
         lines = b.goods()
@@ -413,37 +479,38 @@ def _build(rng: random.Random, number: int, kind: str) -> Dict:
                     for l in lines]
         billed = _over(lines, Decimal("0.015"), raised)
         receipt = b.receipt(lines)
-        invoice = b.invoice(billed, notes=rng.choice(
-            ["", "Price adjustment reflects current raw material costs.", "Updated pricing per our notice."]))
+        invoice = b.invoice(billed, notes=b.note(
+            "", "Price adjustment reflects current raw material costs.", "Updated pricing per our notice."))
 
     elif kind in ("duplicate", "duplicate_late"):
         lines = b.goods()
         po, receipt = b.po(lines), b.receipt(lines)
         paid = b.invoice([dict(l) for l in lines], on=b.invoice_date)
         paid["status"] = "paid"
-        gap = rng.randint(1, 6) if kind == "duplicate" else rng.randint(10, 35)
-        invoice = b.invoice([dict(l) for l in lines], number=_similar_number(b.invoice_number, rng),
+        late = kind == "duplicate_late"
+        gap = rng.randint(10, 35) if late else rng.randint(1, 6)
+        invoice = b.invoice([dict(l) for l in lines], number=_resubmitted_number(b.invoice_number, rng),
                             on=b.invoice_date + timedelta(days=gap),
-                            notes=rng.choice(["", "Second notice.", "Resubmitted for payment.", "Copy of invoice."]))
-        history = [paid]
+                            notes=b.note("", "Resubmitted for payment.", "Copy of invoice.",
+                                         *(REMINDER if late else [])))
+        history = sorted(history + [paid], key=lambda h: h["invoice_date"], reverse=True)
 
     elif kind == "bank_change":
         lines = b.goods()
         po, receipt = b.po(lines), b.receipt(lines)
         other = {"bank": rng.choice([x for x in BANKS if x != b.vendor["remit_to"]["bank"]]),
                  "account_last4": f"{rng.randint(0, 9999):04d}"}
-        invoice = b.invoice([dict(l) for l in lines], remit_to=other,
-                            notes=rng.choice(BANK_CHANGED) if rng.random() < 0.5 else "")
+        invoice = b.invoice([dict(l) for l in lines], remit_to=other, notes=b.note("", *BANK_CHANGED))
 
     elif kind == "vendor_mismatch":
         lines = b.goods()
-        po_vendor = b._vendor(9000 + number)
+        po_vendor = b._vendor(500 + number, b.trade)
         po_vendor["name"] = b.vendor["name"].rsplit(" ", 1)[0] + " " + rng.choice(
             [s for s in NAME_SUFFIX if not b.vendor["name"].endswith(s)])
         po = b.po(lines, vendor=po_vendor)
         receipt = b.receipt(lines)
         receipt["vendor_id"] = po_vendor["id"]
-        invoice = b.invoice([dict(l) for l in lines])
+        invoice = b.invoice([dict(l) for l in lines], notes=b.note(""))
         case["po_vendor"] = po_vendor
 
     else:

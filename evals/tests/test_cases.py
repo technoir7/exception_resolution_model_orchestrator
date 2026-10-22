@@ -1,7 +1,7 @@
 """The benchmark's cases: each kind's right answer must follow from its documents."""
 
 from collections import Counter
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 import pytest
 
@@ -20,6 +20,17 @@ def money(value) -> Decimal:
 
 def lines_by_number(document):
     return {line["line_number"]: line for line in document["line_items"]}
+
+
+class TestVendors:
+    def test_sell_what_their_names_say(self):
+        for case in ALL:
+            descriptions = " ".join(l["description"] for l in case["po"]["line_items"])
+            trade = next(t for t in cases.GOODS if t in case["vendor"]["name"]) if case["kind"] not in (
+                "recurring_service", "unit_of_measure") else None
+            if trade:
+                assert all(l["description"] in [g[0] for g in cases.GOODS[trade]] for l in case["po"]["line_items"]), \
+                    (case["id"], case["vendor"]["name"], descriptions)
 
 
 class TestTheSet:
@@ -83,7 +94,7 @@ class TestPay:
         for case in of("tax_correct"):
             rate = money(case["po"]["tax_rate"])
             assert rate > 0
-            assert money(case["invoice"]["tax_amount"]) == (money(case["invoice"]["subtotal"]) * rate).quantize(Decimal("0.01"))
+            assert money(case["invoice"]["tax_amount"]) == (money(case["invoice"]["subtotal"]) * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def test_a_weekly_service_bills_a_new_week(self):
         for case in of("recurring_service"):
@@ -115,15 +126,18 @@ class TestHold:
 
     def test_a_duplicate_repeats_a_paid_invoice(self):
         for case in of("duplicate") + of("duplicate_late"):
-            [paid] = case["history"]
-            assert paid["line_items"] == case["invoice"]["line_items"]
+            paid = original(case)
             assert paid["total_amount"] == case["invoice"]["total_amount"]
-            assert paid["invoice_number"] != case["invoice"]["invoice_number"]
+            assert paid["po_number"] == case["invoice"]["po_number"]
 
     def test_a_late_duplicate_falls_outside_the_rules_window(self):
         for case in of("duplicate_late"):
-            [paid] = case["history"]
-            assert (date(case["invoice"]["invoice_date"]) - date(paid["invoice_date"])).days > 7
+            assert (date(case["invoice"]["invoice_date"]) - date(original(case)["invoice_date"])).days > 7
+
+    def test_only_a_duplicates_history_holds_the_same_lines(self):
+        for case in ALL:
+            if case["kind"] not in ("duplicate", "duplicate_late"):
+                assert all(h["line_items"] != case["invoice"]["line_items"] for h in case["history"]), case["id"]
 
     def test_disallowed_freight_breaks_the_po_terms(self):
         for case in of("freight_not_allowed"):
@@ -133,7 +147,7 @@ class TestHold:
 
     def test_wrong_tax_is_not_the_po_rate(self):
         for case in of("tax_wrong"):
-            expected = (money(case["invoice"]["subtotal"]) * money(case["po"]["tax_rate"])).quantize(Decimal("0.01"))
+            expected = (money(case["invoice"]["subtotal"]) * money(case["po"]["tax_rate"])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             assert money(case["invoice"]["tax_amount"]) != expected
 
     def test_a_bank_change_pays_another_account(self):
@@ -148,6 +162,11 @@ class TestHold:
     def test_a_vendor_mismatch_bills_someone_elses_po(self):
         for case in of("vendor_mismatch"):
             assert case["invoice"]["vendor_id"] != case["po"]["vendor_id"]
+
+
+def original(case):
+    [paid] = [h for h in case["history"] if h["line_items"] == case["invoice"]["line_items"]]
+    return paid
 
 
 def freight(case) -> Decimal:

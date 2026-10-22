@@ -93,3 +93,39 @@ reported and dropped from every arm.
 Before this was written, 12 cases from another set (seed 0, `data/round0/`)
 went to Haiku and Opus, only to check that answers could be read. All were.
 Nothing was changed after it.
+
+## Round 2
+
+Round 1's answers were collected (`data/round1/`, cases built by the
+generator as of commit f0c013c), and its label audit found all 40 labels
+right. It also found ways a model could guess without reading the documents:
+a quantity flag that appeared only on invoices to pay, invoice notes that
+always pointed the right way ("Second notice" only on duplicates, "Partial
+shipment" only on true partial deliveries), resubmitted duplicates always
+renumbered and the only paid history with real-looking numbers, no freight
+billed near its cap, and vendors whose names did not fit what they sold.
+
+Round 2 changes only the cases, before round 1 was scored:
+
+- a vendor's notes can mislead: a reminder or "Second notice" on invoices
+  never paid (which should be paid), "Partial shipment" on some that bill more
+  than arrived, and neutral notes on any kind;
+- overbilling bills either the whole order or more than arrived but less than
+  ordered, so it also shows the quantity-off-the-PO flag a partial delivery
+  shows;
+- a resubmitted invoice keeps its number as often as not;
+- every vendor's paid history is numbered like its other invoices, against
+  ordinary PO numbers;
+- freight lands near its cap, just under (pay) or just over (hold);
+- unit-of-measure lines are worded several ways; vendors sell what their
+  names say.
+
+On round 2's cases (seed 2), the "received" flag now appears on 12 invoices
+to pay and 12 to hold, freight lines on 14 and 12, and "Partial shipment" on 3
+and 3. The quantity-off-the-PO flag still leans to invoices to pay (38 against
+5), which only misleads a model that pays on it.
+
+Everything else is as round 1: the same prompt, models, arms, routing rule
+and measures, and a fresh label audit of 40 random cases by a reviewer who has
+not seen any answers. Round 2's results are the ones the project's README
+reports; round 1's are reported here beside them.
