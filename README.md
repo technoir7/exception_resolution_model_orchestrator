@@ -71,6 +71,19 @@ again, it pays some and holds others on the same borderline invoices.
 Until this measurement the model was a stand-in that returned canned answers,
 and the cost figures were estimates; both are now real.
 
+## Using it on your own invoices
+
+These results hold for these invoices. Real ones differ in layout, vendors
+and the mistakes they contain, so the same measurement comes first. Take a
+few hundred past invoices whose outcomes are known: the ones paid without
+trouble, and the ones later found to be wrong. Run them through with the
+model deciding nothing, and count, against the rules alone, the wrong
+payments it would have stopped, the good invoices it would have sent to a
+person, and the cost per invoice. Only when those numbers are good enough
+should its decisions reach a payment. `evals/` shows the method: the plan
+written before any model runs, every answer recorded once, and every way of
+processing scored on the same invoices.
+
 ## How it works
 
 0. **Intake** (`intake.py`, `extraction.py`): an invoice comes as data, or as
