@@ -57,3 +57,12 @@ async def test_raises_rather_than_return_an_error_as_text(run):
 
 def test_the_three_tiers_are_three_sizes_of_claude():
     assert TIER_MODELS == {ModelTier.TIER_A: "haiku", ModelTier.TIER_B: "sonnet", ModelTier.TIER_C: "opus"}
+
+
+async def test_a_missing_claude_command_is_a_failed_call():
+    """In Docker, say, where it is not installed: the invoice then goes to a
+    person, rather than the pipeline crashing."""
+    async def missing(args, prompt):
+        raise FileNotFoundError("claude")
+    with pytest.raises(ClaudeCLIError, match="not installed"):
+        await ClaudeCLI("haiku", run=missing).complete("x")

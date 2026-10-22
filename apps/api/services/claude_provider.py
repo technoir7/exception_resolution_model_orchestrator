@@ -64,7 +64,13 @@ class ClaudeCLI(LLMProvider):
             "--system-prompt", system_prompt or SYSTEM_PROMPT,
         ]
         started = time.monotonic()
-        code, stdout, stderr = await self.run(args, prompt)
+        try:
+            code, stdout, stderr = await self.run(args, prompt)
+        except FileNotFoundError as error:
+            raise ClaudeCLIError("the claude command is not installed here (set REVIEW_WITH_MODELS=false "
+                                 "to process invoices without models)") from error
+        except asyncio.TimeoutError as error:
+            raise ClaudeCLIError(f"no reply within {TIMEOUT_SECONDS} seconds") from error
         if code != 0:
             raise ClaudeCLIError((stderr or stdout).strip())
         reply = json.loads(stdout)

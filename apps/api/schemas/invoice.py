@@ -34,6 +34,12 @@ class LineItem(BaseModel):
         }
 
 
+class RemitTo(BaseModel):
+    """Where the invoice asks to be paid, checked against the vendor's record."""
+    bank: str = Field(..., max_length=255)
+    account_last4: str = Field(..., min_length=4, max_length=4)
+
+
 class InvoiceCanonical(BaseModel):
     """Canonical invoice data structure."""
     invoice_number: str = Field(..., max_length=100)
@@ -47,6 +53,18 @@ class InvoiceCanonical(BaseModel):
     tax_amount: Decimal = Field(default=Decimal("0"))
     total_amount: Decimal
     line_items: List[LineItem] = Field(default_factory=list)
+    remit_to: Optional[RemitTo] = None
+    notes: Optional[str] = Field(None, max_length=2000)
+    service_period: Optional[date] = Field(None, description="First day of the period a service invoice bills")
+
+    def review_details(self) -> dict:
+        """What the model's review reads beyond the canonical fields."""
+        details = {
+            "remit_to": self.remit_to.model_dump() if self.remit_to else None,
+            "notes": self.notes,
+            "service_period": self.service_period.isoformat() if self.service_period else None,
+        }
+        return {k: v for k, v in details.items() if v is not None}
     
     class Config:
         json_schema_extra = {

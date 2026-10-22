@@ -102,7 +102,9 @@ class PipelineOrchestrator:
 
         try:
             flags = await self._check(invoice, run)
-            if not flags and self.scope == "flagged":
+            # Without models there is nothing to read clean invoices with, so
+            # the rules alone decide them.
+            if not flags and (self.scope == "flagged" or self.models is None):
                 return await self._pay(invoice, run, "passed every check")
 
             run.transition_to(PipelineState.LLM_PROCESSING)

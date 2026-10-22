@@ -10,7 +10,7 @@ End-to-end demo script that:
 import asyncio
 import json
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
@@ -30,6 +30,7 @@ from sqlalchemy import select, func
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 INVOICES_DIR = FIXTURES_DIR / "invoices"
+DEMO_AS_OF = date(2024, 2, 1)
 TENANT_ID = UUID("00000000-0000-0000-0000-000000000100")
 
 
@@ -69,6 +70,7 @@ async def ingest_invoices():
                 tax_amount=Decimal(data.get("tax_amount", "0")),
                 total_amount=Decimal(data["total_amount"]),
                 line_items=data.get("line_items", []),
+                extracted_data={k: data[k] for k in ("remit_to", "notes", "service_period") if data.get(k)},
             )
             
             db.add(invoice)
@@ -100,7 +102,9 @@ async def run_pipeline_on_all():
         )
         invoices = result.scalars().all()
         
-        orchestrator = PipelineOrchestrator(db, TENANT_ID)
+        # The sample invoices are dated January 2024; judged from today, the
+        # rules would flag every one as over a year old.
+        orchestrator = PipelineOrchestrator(db, TENANT_ID, today=DEMO_AS_OF)
         
         for invoice in invoices:
             try:

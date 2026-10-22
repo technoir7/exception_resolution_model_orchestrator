@@ -83,3 +83,23 @@ class TestReadingTheAnswer:
     def test_refuses_anything_else(self, reply):
         with pytest.raises(review.UnreadableVerdict):
             review.parse(reply)
+
+
+class TestWhatAnIngestedInvoiceCarries:
+    def test_the_bank_details_notes_and_service_period_reach_the_review(self):
+        from apps.api.schemas.invoice import InvoiceCanonical
+        invoice = InvoiceCanonical(
+            invoice_number="INV-1", invoice_date="2026-05-04", vendor_id="V001", vendor_name="Acme",
+            subtotal="10.00", total_amount="10.00", notes="Second notice.", service_period="2026-04-27",
+            remit_to={"bank": "First Harbor Bank", "account_last4": "0042"},
+        )
+        assert invoice.review_details() == {
+            "remit_to": {"bank": "First Harbor Bank", "account_last4": "0042"},
+            "notes": "Second notice.", "service_period": "2026-04-27",
+        }
+
+    def test_leaves_out_what_was_not_given(self):
+        from apps.api.schemas.invoice import InvoiceCanonical
+        invoice = InvoiceCanonical(invoice_number="INV-1", invoice_date="2026-05-04", vendor_id="V001",
+                                   vendor_name="Acme", subtotal="10.00", total_amount="10.00")
+        assert invoice.review_details() == {}

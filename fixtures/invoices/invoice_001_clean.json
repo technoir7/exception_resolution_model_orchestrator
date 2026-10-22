@@ -25,6 +25,10 @@
             "amount": "2500.00"
         }
     ],
+    "remit_to": {
+        "bank": "First Harbor Bank",
+        "account_last4": "4417"
+    },
     "_fixture_type": "clean",
     "_expected_outcome": "approved"
 }

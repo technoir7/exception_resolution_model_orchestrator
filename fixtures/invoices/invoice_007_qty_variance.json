@@ -25,6 +25,10 @@
             "amount": "1200.00"
         }
     ],
+    "remit_to": {
+        "bank": "Mercantile Trust",
+        "account_last4": "9032"
+    },
     "_fixture_type": "exception",
     "_expected_outcome": "exception",
     "_exception_type": "quantity_variance",

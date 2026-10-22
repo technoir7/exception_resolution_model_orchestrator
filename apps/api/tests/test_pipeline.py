@@ -120,6 +120,12 @@ class TestWhenTheModelFails:
         [case] = await exceptions(db_session)
         assert case.category == ExceptionCategory.LLM_VALIDATION_FAILED
 
+    async def test_without_models_a_clean_invoice_is_still_paid(self, db_session):
+        invoice = (await seed.load(db_session, TEST_TENANT_ID, [a("clean")]))[a("clean")["id"]]
+        result = await PipelineOrchestrator(db_session, TEST_TENANT_ID, models=None, scope="everything",
+                                            today=cases.AS_OF).run(invoice)
+        assert result.state == PipelineState.COMPLETED
+
     async def test_without_models_a_flagged_invoice_goes_to_a_person(self, db_session):
         invoice = (await seed.load(db_session, TEST_TENANT_ID, [a("tax_correct")]))[a("tax_correct")["id"]]
         result = await PipelineOrchestrator(db_session, TEST_TENANT_ID, models=None, today=cases.AS_OF).run(invoice)

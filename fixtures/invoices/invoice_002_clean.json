@@ -25,6 +25,10 @@
             "amount": "1600.00"
         }
     ],
+    "remit_to": {
+        "bank": "Mercantile Trust",
+        "account_last4": "9032"
+    },
     "_fixture_type": "clean",
     "_expected_outcome": "approved"
 }

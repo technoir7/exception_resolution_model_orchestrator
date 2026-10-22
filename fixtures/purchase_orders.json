@@ -22,7 +22,8 @@
                 "unit_price": "50.00",
                 "amount": "2500.00"
             }
-        ]
+        ],
+        "terms": "Prices are fixed for the life of this PO. Freight: included in prices. Sales tax: 8% applies to goods. Payment terms: Net 30."
     },
     {
         "po_number": "PO-2024-002",
@@ -47,7 +48,8 @@
                 "unit_price": "100.00",
                 "amount": "1600.00"
             }
-        ]
+        ],
+        "terms": "Prices are fixed for the life of this PO. Freight: included in prices. Sales tax: 8% applies to goods. Payment terms: Net 30."
     },
     {
         "po_number": "PO-2024-003",
@@ -65,7 +67,8 @@
                 "unit_price": "50.00",
                 "amount": "1500.00"
             }
-        ]
+        ],
+        "terms": "Prices are fixed for the life of this PO. Freight: included in prices. Sales tax: 8% applies to goods. Payment terms: Net 30."
     },
     {
         "po_number": "PO-2024-004",
@@ -83,7 +86,8 @@
                 "unit_price": "200.00",
                 "amount": "800.00"
             }
-        ]
+        ],
+        "terms": "Prices are fixed for the life of this PO. Freight: included in prices. Sales tax: 8% applies to goods. Payment terms: Net 30."
     },
     {
         "po_number": "PO-2024-005",
@@ -108,6 +112,7 @@
                 "unit_price": "1000.00",
                 "amount": "6000.00"
             }
-        ]
+        ],
+        "terms": "Prices are fixed for the life of this PO. Freight: included in prices. Sales tax: 8% applies to goods. Payment terms: Net 30."
     }
 ]

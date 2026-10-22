@@ -64,7 +64,8 @@ async def ingest_invoice(
         invoice.subtotal = cd.subtotal
         invoice.tax_amount = cd.tax_amount
         invoice.total_amount = cd.total_amount
-        invoice.line_items = [item.model_dump() for item in cd.line_items]
+        invoice.line_items = [item.model_dump(mode="json") for item in cd.line_items]
+        invoice.extracted_data = cd.review_details()
     
     ctx.db.add(invoice)
     await ctx.db.commit()

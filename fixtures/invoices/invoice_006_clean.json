@@ -18,6 +18,10 @@
             "amount": "800.00"
         }
     ],
+    "remit_to": {
+        "bank": "Citizens Savings",
+        "account_last4": "1268"
+    },
     "_fixture_type": "clean",
     "_expected_outcome": "approved"
 }

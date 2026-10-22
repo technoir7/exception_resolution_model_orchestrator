@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from apps.api.models.base import async_session_maker, init_db
 from apps.api.models.tenant import Tenant
+from apps.api.models.vendor import Vendor
 from apps.api.models.purchase_order import PurchaseOrder, POStatus
 from apps.api.models.receipt import Receipt
 
@@ -71,6 +72,7 @@ async def seed_purchase_orders():
                 currency=po_data["currency"],
                 total_amount=Decimal(po_data["total_amount"]),
                 line_items=po_data["line_items"],
+                terms=po_data.get("terms"),
             )
             db.add(po)
         
@@ -108,6 +110,22 @@ async def seed_receipts():
         print(f"✓ Created {len(receipts)} receipts")
 
 
+async def seed_vendors():
+    """Seed vendor records, with the bank account each is paid into."""
+    async with async_session_maker() as db:
+        with open(FIXTURES_DIR / "vendors.json") as f:
+            vendors = json.load(f)
+        for v in vendors:
+            result = await db.execute(select(Vendor).where(Vendor.tenant_id == TENANT_ID, Vendor.vendor_id == v["id"]))
+            if result.scalar_one_or_none():
+                continue
+            db.add(Vendor(tenant_id=TENANT_ID, vendor_id=v["id"], name=v["name"], tax_id=v["tax_id"],
+                          remit_bank=v["remit_bank"], remit_account_last4=v["remit_account_last4"],
+                          payment_terms=v["payment_terms"]))
+        await db.commit()
+        print(f"✓ Seeded {len(vendors)} vendors")
+
+
 async def main():
     """Run all seed functions."""
     print("\n=== AP Reconciliation Orchestrator - Database Seeding ===\n")
@@ -118,6 +136,7 @@ async def main():
     
     print("Seeding data...")
     await seed_tenant()
+    await seed_vendors()
     await seed_purchase_orders()
     await seed_receipts()
     
