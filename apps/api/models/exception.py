@@ -8,7 +8,8 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, Index, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import Uuid
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from apps.api.models.base import TenantScopedBase
@@ -93,7 +94,7 @@ class ExceptionCase(TenantScopedBase):
     
     # Invoice reference
     invoice_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         ForeignKey("invoices.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -101,7 +102,7 @@ class ExceptionCase(TenantScopedBase):
     
     # Pipeline run that created this exception
     pipeline_run_id: Mapped[Optional[UUID]] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         ForeignKey("invoice_pipeline_runs.id", ondelete="SET NULL"),
         nullable=True,
     )
@@ -129,7 +130,7 @@ class ExceptionCase(TenantScopedBase):
         String(20),
         nullable=False,
     )
-    assigned_to: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    assigned_to: Mapped[Optional[UUID]] = mapped_column(Uuid(), nullable=True)
     
     # Description and details
     title: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -143,7 +144,7 @@ class ExceptionCase(TenantScopedBase):
     # Resolution
     resolution: Mapped[Optional[str]] = mapped_column(String(2000), nullable=True)
     resolution_action: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    resolved_by: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    resolved_by: Mapped[Optional[UUID]] = mapped_column(Uuid(), nullable=True)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
     # Relationships

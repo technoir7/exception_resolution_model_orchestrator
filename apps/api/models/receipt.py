@@ -7,7 +7,8 @@ from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import Date, ForeignKey, Index, Numeric, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import Uuid
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from apps.api.models.base import TenantScopedBase

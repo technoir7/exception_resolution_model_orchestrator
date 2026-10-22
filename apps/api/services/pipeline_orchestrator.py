@@ -22,7 +22,7 @@ from apps.api.services.exception_handler import ExceptionHandler
 from apps.api.services.llm_router import LLMRouter, RouterContext
 from apps.api.services.matching_engine import MatchingEngine, MatchStatus
 from apps.api.services.rules_engine import RulesEngine
-from apps.api.services.verification import VerificationService
+from apps.api.services.verification import VerificationResult, VerificationService
 
 logger = structlog.get_logger()
 

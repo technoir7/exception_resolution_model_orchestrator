@@ -8,7 +8,8 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, Index, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import Uuid
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from apps.api.models.base import TenantScopedBase
@@ -43,13 +44,13 @@ class AuditEvent(TenantScopedBase):
     
     # References
     invoice_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         ForeignKey("invoices.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     pipeline_run_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         ForeignKey("invoice_pipeline_runs.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -79,7 +80,7 @@ class AuditEvent(TenantScopedBase):
     
     # Actor (user or system)
     actor_type: Mapped[str] = mapped_column(String(20), default="system", nullable=False)
-    actor_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    actor_id: Mapped[Optional[UUID]] = mapped_column(Uuid(), nullable=True)
     
     # Additional event metadata
     event_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)

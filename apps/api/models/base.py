@@ -9,7 +9,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, MetaData, func
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import Uuid
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -34,7 +34,7 @@ class Base(DeclarativeBase):
     
     # Common columns for all models
     id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         primary_key=True,
         default=uuid4,
     )
@@ -65,7 +65,7 @@ class TenantScopedBase(Base):
     __abstract__ = True
     
     tenant_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         nullable=False,
         index=True,
     )

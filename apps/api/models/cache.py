@@ -7,7 +7,8 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime, Index, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import Uuid
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from apps.api.models.base import TenantScopedBase

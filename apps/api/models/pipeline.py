@@ -8,7 +8,8 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, Index, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import Uuid
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from apps.api.models.base import TenantScopedBase
@@ -40,7 +41,7 @@ class InvoicePipelineRun(TenantScopedBase):
     
     # Invoice reference
     invoice_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         ForeignKey("invoices.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -67,7 +68,7 @@ class InvoicePipelineRun(TenantScopedBase):
     
     # Run metadata
     is_replay: Mapped[bool] = mapped_column(default=False, nullable=False)
-    original_run_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    original_run_id: Mapped[Optional[UUID]] = mapped_column(Uuid(), nullable=True)
     
     # Policy versions used
     policy_version: Mapped[str] = mapped_column(String(50), default="v1", nullable=False)

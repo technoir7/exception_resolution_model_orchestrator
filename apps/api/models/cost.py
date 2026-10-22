@@ -9,7 +9,8 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import Uuid
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from apps.api.models.base import TenantScopedBase
@@ -42,19 +43,19 @@ class CostEvent(TenantScopedBase):
     
     # References
     invoice_id: Mapped[Optional[UUID]] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         ForeignKey("invoices.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
     pipeline_run_id: Mapped[Optional[UUID]] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         ForeignKey("invoice_pipeline_runs.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
     exception_id: Mapped[Optional[UUID]] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid(),
         ForeignKey("exception_cases.id", ondelete="SET NULL"),
         nullable=True,
     )
@@ -79,7 +80,7 @@ class CostEvent(TenantScopedBase):
     was_cache_hit: Mapped[bool] = mapped_column(default=False, nullable=False)
     
     # Batch info
-    batch_id: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    batch_id: Mapped[Optional[UUID]] = mapped_column(Uuid(), nullable=True)
     batch_discount_percent: Mapped[Optional[Decimal]] = mapped_column(
         Numeric(5, 2),
         nullable=True,
