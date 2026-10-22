@@ -7,7 +7,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
-from sqlalchemy import Date, Index, Numeric, String
+from sqlalchemy import Text, Date, Index, Numeric, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -56,6 +56,10 @@ class PurchaseOrder(TenantScopedBase):
     
     # Line items
     line_items: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+
+    # Commercial terms in words (pricing, freight, tax, payment), which decide
+    # whether a charge on an invoice is allowed.
+    terms: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     # Received quantities tracking
     received_amount: Mapped[Decimal] = mapped_column(

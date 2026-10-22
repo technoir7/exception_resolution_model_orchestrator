@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.config import settings
 from apps.api.models.invoice import Invoice
-from apps.api.models.purchase_order import PurchaseOrder
+from apps.api.models.purchase_order import POStatus, PurchaseOrder
 from apps.api.schemas.invoice import InvoiceCanonical
 
 logger = structlog.get_logger()
@@ -80,10 +80,13 @@ class RulesEngine:
         "total_amount",
     ]
     
-    def __init__(self, db: AsyncSession, tenant_id: UUID):
+    def __init__(self, db: AsyncSession, tenant_id: UUID, today: Optional[date] = None):
         self.db = db
         self.tenant_id = tenant_id
         self.logger = logger.bind(tenant_id=str(tenant_id))
+        # Fixed in tests and benchmarks, so an invoice's age is judged the same
+        # whenever they run.
+        self.today = today
     
     async def validate(self, invoice: Invoice) -> RulesResult:
         """
@@ -178,7 +181,7 @@ class RulesEngine:
     def _validate_dates(self, invoice: Invoice) -> List[RuleViolation]:
         """Validate invoice dates are reasonable."""
         violations = []
-        today = date.today()
+        today = self.today or date.today()
         
         if invoice.invoice_date:
             # Invoice date shouldn't be in the far future
@@ -320,11 +323,13 @@ class RulesEngine:
                 severity="high",
             )
         
-        if po.status.value in ("closed", "cancelled"):
+        # The column is plain text, so a PO read back from the database has a
+        # str status; a str enum compares equal to its value either way.
+        if po.status in (POStatus.CLOSED, POStatus.CANCELLED):
             return RuleViolation(
                 rule_type=RuleViolationType.PO_CLOSED,
                 field="po_number",
-                message=f"PO {invoice.po_number} is {po.status.value}",
+                message=f"PO {invoice.po_number} is {POStatus(po.status).value}",
                 severity="high",
             )
         

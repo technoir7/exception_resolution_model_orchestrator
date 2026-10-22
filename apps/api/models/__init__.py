@@ -4,6 +4,7 @@ from apps.api.models.tenant import Tenant
 from apps.api.models.invoice import Invoice
 from apps.api.models.purchase_order import PurchaseOrder
 from apps.api.models.receipt import Receipt
+from apps.api.models.vendor import Vendor
 from apps.api.models.pipeline import InvoicePipelineRun
 from apps.api.models.exception import ExceptionCase
 from apps.api.models.audit import AuditEvent
@@ -16,6 +17,7 @@ __all__ = [
     "Invoice",
     "PurchaseOrder",
     "Receipt",
+    "Vendor",
     "InvoicePipelineRun",
     "ExceptionCase",
     "AuditEvent",
