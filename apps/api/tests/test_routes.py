@@ -161,3 +161,35 @@ class TestTheQueue:
         assert (await api.get(f"/exceptions/{case.id}", headers=await login(api))).json()["invoice"]["id"] == str(held.id)
         resolved = await TestResolvingAnException().resolve(api, case, "approve")
         assert resolved.json()["invoice"]["status"] == "approved"
+
+    async def test_can_be_narrowed_to_one_invoice(self, api, db_session):
+        held, case = await TestResolvingAnException().held(db_session)
+        headers = await login(api)
+        assert [e["id"] for e in (await api.get(f"/exceptions?invoice_id={held.id}", headers=headers)).json()["items"]] == [str(case.id)]
+        assert (await api.get(f"/exceptions?invoice_id={uuid4()}", headers=headers)).json()["items"] == []
+
+
+class TestProcessing:
+    """Statuses come back from the database as plain strings, not enums."""
+
+    @pytest.fixture
+    async def stored(self, db_session, monkeypatch):
+        from apps.api.config import settings
+        from evals import seed
+        monkeypatch.setattr(settings, "review_with_models", False)
+        invoice = (await seed.load(db_session, TEST_TENANT_ID, [a("clean")]))[a("clean")["id"]]
+        await db_session.commit()
+        stored = invoice.id
+        db_session.expire_all()
+        return stored
+
+    async def test_one_invoice_read_back_from_the_database(self, api, stored):
+        reply = await api.post(f"/pipeline/run/{stored}", headers=await login(api))
+        assert reply.status_code == 200, reply.text
+        again = await api.post(f"/pipeline/run/{stored}", headers=await login(api))
+        assert again.status_code in (200, 400), again.text
+
+    async def test_a_batch(self, api, stored):
+        reply = await api.post("/pipeline/run_batch", json={"invoice_ids": [str(stored)]}, headers=await login(api))
+        assert reply.status_code == 200, reply.text
+        assert reply.json()["queued"] == 1

@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.dependencies import get_tenant_context, TenantContext
-from apps.api.models.invoice import Invoice
+from apps.api.models.invoice import Invoice, InvoiceStatus
 from apps.api.models.pipeline import InvoicePipelineRun
 from apps.api.schemas.pipeline import (
     PipelineRunRequest,
@@ -21,6 +21,10 @@ from apps.api.schemas.pipeline import (
 from apps.api.services.pipeline_orchestrator import PipelineOrchestrator
 
 router = APIRouter()
+
+# Statuses read back from the database are plain strings; InvoiceStatus is a
+# str enum, so these compare equal either way.
+PROCESSABLE = (InvoiceStatus.PENDING, InvoiceStatus.EXCEPTION)
 
 
 @router.post("/run/{invoice_id}", response_model=PipelineRunResponse)
@@ -48,10 +52,10 @@ async def run_pipeline(
     if request is None:
         request = PipelineRunRequest()
     
-    if invoice.status.value not in ("pending", "exception") and not request.force_reprocess:
+    if invoice.status not in PROCESSABLE and not request.force_reprocess:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invoice already processed with status {invoice.status.value}. Use force_reprocess=true to reprocess.",
+            detail=f"Invoice already processed with status {InvoiceStatus(invoice.status).value}. Use force_reprocess=true to reprocess.",
         )
     
     # Run pipeline
@@ -91,7 +95,7 @@ async def run_batch_pipeline(
     
     for invoice_id in request.invoice_ids:
         invoice = invoices[invoice_id]
-        if invoice.status.value in ("pending", "exception") or request.force_reprocess:
+        if invoice.status in PROCESSABLE or request.force_reprocess:
             queued += 1
             # In MVP, process synchronously (in prod, would queue to Celery)
             orchestrator = PipelineOrchestrator(ctx.db, ctx.tenant_id)

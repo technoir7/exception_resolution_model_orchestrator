@@ -41,6 +41,7 @@ async def list_exceptions(
     page_size: int = Query(20, ge=1, le=100),
     status_filter: Optional[ExceptionStatus] = Query(None, alias="status"),
     category: Optional[ExceptionCategory] = None,
+    invoice_id: Optional[UUID] = None,
     ctx: TenantContext = Depends(get_tenant_context),
 ):
     """List exceptions with pagination and filtering."""
@@ -66,6 +67,10 @@ async def list_exceptions(
     if category:
         query = query.where(ExceptionCase.category == category)
         count_query = count_query.where(ExceptionCase.category == category)
+    
+    if invoice_id:
+        query = query.where(ExceptionCase.invoice_id == invoice_id)
+        count_query = count_query.where(ExceptionCase.invoice_id == invoice_id)
     
     # Get counts
     total = (await ctx.db.execute(count_query)).scalar_one()

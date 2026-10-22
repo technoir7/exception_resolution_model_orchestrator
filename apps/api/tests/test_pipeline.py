@@ -166,3 +166,19 @@ class TestTheRecord:
         last = await self.last_event(db_session, invoice)
         assert (last["decision"], last["why"]) == ("approved", "x")
         assert last["flags"]
+
+
+class TestTheTitleOfAHold:
+    async def title(self, db, explanation):
+        reply = json.dumps({"decision": "hold", "reason": "price", "confidence": 0.9, "explanation": explanation})
+        await run(db, a("price_increase"), haiku=[reply])
+        [case] = await exceptions(db)
+        return case.title
+
+    async def test_is_the_models_first_sentence(self, db_session):
+        title = await self.title(db_session, "Billed $12 a unit; the PO says $10. The receipt matches the PO.")
+        assert title == "Billed $12 a unit; the PO says $10."
+
+    async def test_a_long_one_ends_at_a_whole_word(self, db_session):
+        title = await self.title(db_session, "The unit price " + "climbs again " * 30 + "past the PO.")
+        assert len(title) <= 150 and title.endswith("again…")

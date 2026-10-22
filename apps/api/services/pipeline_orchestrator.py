@@ -11,6 +11,7 @@ tenant's daily cap invoices go to a person without one. The defaults are what
 the benchmark in `evals/` supports.
 """
 
+import re
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Callable, List, Optional
@@ -50,6 +51,15 @@ HOLD_CATEGORY = {
 TIERS = {model: tier for tier, model in TIER_MODELS.items()}
 # One retry, as an unreadable answer is usually a formatting slip.
 ATTEMPTS = 2
+TITLE_LENGTH = 150
+
+
+def headline(text: str) -> str:
+    """The first sentence, cut at a whole word if it is too long for a title."""
+    first = re.split(r"(?<=[.!?])\s+", text.strip(), maxsplit=1)[0]
+    if len(first) <= TITLE_LENGTH:
+        return first
+    return first[:TITLE_LENGTH - 1].rsplit(" ", 1)[0] + "…"
 
 
 class PipelineOrchestrator:
@@ -120,7 +130,7 @@ class PipelineOrchestrator:
                 return await self._pay(invoice, run, verdict.explanation, flags)
             return await self._to_a_person(
                 invoice, run, HOLD_CATEGORY.get(verdict.reason, ExceptionCategory.OTHER),
-                f"Held: {verdict.explanation[:150]}", verdict.explanation, flags)
+                headline(verdict.explanation), verdict.explanation, flags)
         except Exception as error:
             run.state = PipelineState.FAILED
             run.error_message = str(error)

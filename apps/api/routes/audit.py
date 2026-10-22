@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.dependencies import get_tenant_context, TenantContext
-from apps.api.models.audit import AuditEvent
+from apps.api.models.audit import AuditEvent, AuditStep
 from apps.api.models.invoice import Invoice
 from apps.api.models.pipeline import InvoicePipelineRun
 from apps.api.schemas.audit import (
@@ -132,7 +132,7 @@ async def replay_pipeline(
                 replay_output_hash=replay.output_hash,
                 original_output=orig.raw_output if request.compare_outputs else None,
                 replay_output=replay.raw_output if request.compare_outputs else None,
-                description=f"Output changed at step {orig.step.value}",
+                description=f"Output changed at step {AuditStep(orig.step).value}",
             ))
     
     drift_report = DriftReport(

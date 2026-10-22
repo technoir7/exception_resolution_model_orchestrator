@@ -138,7 +138,8 @@ async def get_exception_stats():
             .where(ExceptionCase.tenant_id == TENANT_ID)
             .group_by(ExceptionCase.category)
         )
-        return {row[0].value: row[1] for row in result.fetchall()}
+        # The category is stored as its plain string value.
+        return dict(result.fetchall())
 
 
 async def get_cost_stats():
@@ -151,13 +152,6 @@ async def get_cost_stats():
         )
         total_cost = result.scalar_one() or Decimal("0")
         
-        # Cache hits
-        result = await db.execute(
-            select(func.count(CostEvent.id))
-            .where(CostEvent.tenant_id == TENANT_ID, CostEvent.was_cache_hit == True)
-        )
-        cache_hits = result.scalar_one() or 0
-        
         # Total calls
         result = await db.execute(
             select(func.count(CostEvent.id))
@@ -167,9 +161,7 @@ async def get_cost_stats():
         
         return {
             "total_cost": total_cost,
-            "cache_hits": cache_hits,
             "total_calls": total_calls,
-            "cache_hit_rate": cache_hits / total_calls if total_calls > 0 else 0,
         }
 
 
@@ -200,7 +192,7 @@ async def print_summary(pipeline_results):
    ─────────────────────────────────────
    Total LLM Cost:            ${cost_stats['total_cost']:.4f}
    Avg Cost per Invoice:      ${avg_cost:.4f}
-   Cache Hit Rate:            {cost_stats['cache_hit_rate']*100:.0f}%
+   Model Calls:               {cost_stats['total_calls']}
 """)
     
     if exception_stats:
