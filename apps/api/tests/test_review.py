@@ -103,3 +103,28 @@ class TestWhatAnIngestedInvoiceCarries:
         invoice = InvoiceCanonical(invoice_number="INV-1", invoice_date="2026-05-04", vendor_id="V001",
                                    vendor_name="Acme", subtotal="10.00", total_amount="10.00")
         assert invoice.review_details() == {}
+
+
+class TestDeliveriesAndBankChanges:
+    async def test_every_receipt_on_the_po_is_shown(self, db_session):
+        from apps.api.models.receipt import Receipt
+        from datetime import date
+        case = first("clean")
+        invoices = await seed.load(db_session, TEST_TENANT_ID, [case])
+        db_session.add(Receipt(tenant_id=TEST_TENANT_ID, receipt_number="RCV-SECOND", receipt_date=date(2026, 5, 1),
+                               po_number=case["po"]["po_number"], vendor_id=case["vendor"]["id"],
+                               total_amount=Decimal("0"), line_items=[]))
+        await db_session.flush()
+        file = await case_file_for(db_session, TEST_TENANT_ID, invoices[case["id"]], today=cases.AS_OF)
+        text = review.prompt(file)
+        assert case["receipt"]["receipt_number"] in text and "RCV-SECOND" in text
+
+    async def test_a_changed_bank_account_shows_when_and_from_what(self, db_session):
+        from datetime import date
+        case = first("clean")
+        invoices = await seed.load(db_session, TEST_TENANT_ID, [case])
+        file = await case_file_for(db_session, TEST_TENANT_ID, invoices[case["id"]], today=cases.AS_OF)
+        file.vendor.remit_updated_on = date(2026, 3, 2)
+        file.vendor.remit_previous = "Union Plains Bank, account ending 1234"
+        text = review.prompt(file)
+        assert "updated 2026-03-02" in text and "Union Plains Bank, account ending 1234" in text

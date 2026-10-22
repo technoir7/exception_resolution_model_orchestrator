@@ -2,7 +2,7 @@
 Everything a reviewer needs to decide one invoice, gathered from the database.
 
 What a person in accounts payable would pull up before paying: the PO with its
-terms, the goods receipt, the vendor's record with the bank account on file,
+terms, every goods receipt on the PO, the vendor's record with the bank account on file,
 the vendor's recent paid invoices, and what the automatic checks flagged.
 """
 
@@ -29,7 +29,7 @@ HISTORY_LIMIT = 10
 class CaseFile:
     invoice: Invoice
     po: Optional[PurchaseOrder]
-    receipt: Optional[Receipt]
+    receipts: List[Receipt]
     vendor: Optional[Vendor]
     recent: List[Invoice] = field(default_factory=list)
     flags: List[str] = field(default_factory=list)
@@ -46,7 +46,12 @@ async def case_file_for(
         return result.scalars().first()
 
     po = await one(PurchaseOrder, PurchaseOrder.po_number == invoice.po_number) if invoice.po_number else None
-    receipt = await one(Receipt, Receipt.po_number == invoice.po_number) if invoice.po_number else None
+    receipts = []
+    if invoice.po_number:
+        result = await db.execute(select(Receipt).where(and_(
+            Receipt.tenant_id == tenant_id, Receipt.po_number == invoice.po_number,
+        )).order_by(Receipt.receipt_date))
+        receipts = list(result.scalars().all())
     vendor = await one(Vendor, Vendor.vendor_id == invoice.vendor_id)
 
     recent = []
@@ -65,4 +70,4 @@ async def case_file_for(
 
     if flags is None:
         flags = await flags_for(db, tenant_id, invoice, today=today)
-    return CaseFile(invoice=invoice, po=po, receipt=receipt, vendor=vendor, recent=recent, flags=flags)
+    return CaseFile(invoice=invoice, po=po, receipts=receipts, vendor=vendor, recent=recent, flags=flags)

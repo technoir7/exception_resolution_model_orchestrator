@@ -96,10 +96,10 @@ class MatchingEngine:
                 summary="No PO found for matching",
             )
         
-        receipt = await self._lookup_receipt(po.po_number)
+        receipts = await self._lookup_receipts(po.po_number)
         
-        if receipt:
-            return await self._three_way_match(invoice, po, receipt)
+        if receipts:
+            return await self._three_way_match(invoice, po, _combined(receipts))
         return await self._two_way_match(invoice, po)
     
     async def _two_way_match(self, invoice: Invoice, po: PurchaseOrder) -> MatchResult:
@@ -263,12 +263,36 @@ class MatchingEngine:
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
-    async def _lookup_receipt(self, po_number: str) -> Optional[Receipt]:
+    async def _lookup_receipts(self, po_number: str) -> List[Receipt]:
+        """Every receipt on the PO: one delivered in several shipments has several."""
         query = select(Receipt).where(
             and_(
                 Receipt.tenant_id == self.tenant_id,
                 Receipt.po_number == po_number,
             )
-        )
+        ).order_by(Receipt.receipt_date)
         result = await self.db.execute(query)
-        return result.scalar_one_or_none()
+        return list(result.scalars().all())
+
+
+def _combined(receipts: List[Receipt]) -> Receipt:
+    """Everything received on a PO, as one receipt to match against. Built in
+    memory only; it is never added to the session."""
+    if len(receipts) == 1:
+        return receipts[0]
+    quantities: Dict[Any, Decimal] = {}
+    descriptions: Dict[Any, str] = {}
+    for receipt in receipts:
+        for line in receipt.line_items or []:
+            number = line.get("line_number")
+            quantities[number] = quantities.get(number, Decimal(0)) + Decimal(str(line.get("quantity", 0)))
+            descriptions[number] = line.get("description")
+    return Receipt(
+        tenant_id=receipts[0].tenant_id,
+        receipt_number=", ".join(r.receipt_number for r in receipts),
+        receipt_date=receipts[-1].receipt_date,
+        po_number=receipts[0].po_number,
+        vendor_id=receipts[0].vendor_id,
+        total_amount=sum((r.total_amount for r in receipts), Decimal(0)),
+        line_items=[{"line_number": n, "description": descriptions[n], "quantity": q} for n, q in quantities.items()],
+    )

@@ -90,8 +90,10 @@ def _vendor(file: CaseFile) -> List[str]:
     v = file.vendor
     if v is None:
         return [f"VENDOR RECORD: none on file for vendor {file.invoice.vendor_id}"]
-    return [f"VENDOR RECORD {v.vendor_id}: {v.name}; tax ID {v.tax_id}; payment terms {v.payment_terms}",
-            f"Bank account on file: {v.remit_bank}, account ending {v.remit_account_last4}"]
+    on_file = f"Bank account on file: {v.remit_bank}, account ending {v.remit_account_last4}"
+    if v.remit_updated_on:
+        on_file += f" (updated {v.remit_updated_on}; previously {v.remit_previous or 'not recorded'})"
+    return [f"VENDOR RECORD {v.vendor_id}: {v.name}; tax ID {v.tax_id}; payment terms {v.payment_terms}", on_file]
 
 
 def _po(file: CaseFile) -> List[str]:
@@ -104,10 +106,12 @@ def _po(file: CaseFile) -> List[str]:
 
 
 def _receipt(file: CaseFile) -> List[str]:
-    r = file.receipt
-    if r is None:
+    if not file.receipts:
         return ["GOODS RECEIPT: none on file for this PO"]
-    return [f"GOODS RECEIPT {r.receipt_number}, dated {r.receipt_date}", *_lines(r.line_items, received=True)]
+    out = []
+    for r in file.receipts:
+        out += [f"GOODS RECEIPT {r.receipt_number}, dated {r.receipt_date}", *_lines(r.line_items, received=True)]
+    return out
 
 
 def _recent(file: CaseFile) -> List[str]:
