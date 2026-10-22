@@ -1,136 +1,100 @@
 import Link from 'next/link'
 
-interface ExceptionDetail {
-    id: string
-    invoice_id: string
-    invoice_number: string
-    category: string
-    severity: string
-    status: string
-    title: string
-    description: string
-    details: Record<string, any>
-    owner_role: string
-    sla_deadline: string
-    sla_breached: boolean
-    created_at: string
-}
+import { resolveException } from '@/app/actions'
+import { Submit } from '@/app/client'
+import { ErrorBanner, Field, StatusBadge } from '@/app/ui'
+import { api } from '@/lib/api'
+import { label, money, overdue, when } from '@/lib/format'
+import type { Exception } from '@/lib/types'
 
-async function getException(id: string): Promise<ExceptionDetail> {
-    return {
-        id,
-        invoice_id: '3',
-        invoice_number: 'INV-2024-003',
-        category: 'missing_po',
-        severity: 'high',
-        status: 'open',
-        title: 'PO PO-MISSING-999 not found',
-        description: 'The referenced purchase order PO-MISSING-999 does not exist in the system.',
-        details: {
-            po_number: 'PO-MISSING-999',
-            vendor_id: 'V001',
-            invoice_amount: '$2,160.00',
-        },
-        owner_role: 'ap_manager',
-        sla_deadline: '2024-01-19 18:00',
-        sla_breached: false,
-        created_at: '2024-01-18 10:00',
-    }
-}
+// apps/api/services/exception_handler.py: RESOLUTIONS
+const ACTIONS = [
+    { value: 'approve', label: 'Approve for payment' },
+    { value: 'reject', label: 'Reject the invoice' },
+    { value: 'escalate', label: 'Escalate: leave it held for someone senior' },
+    { value: 'reprocess', label: 'Send it back through the checks' },
+]
 
-export default async function ExceptionDetailPage({ params }: { params: { id: string } }) {
-    const exception = await getException(params.id)
+export default async function ExceptionPage({ params, searchParams }: {
+    params: Promise<{ id: string }>
+    searchParams: Promise<{ error?: string }>
+}) {
+    const [{ id }, { error }] = await Promise.all([params, searchParams])
+    const exc = await api<Exception>(`/exceptions/${id}`)
+    const open = exc.status !== 'resolved'
+    const flags = exc.details?.flags ?? []
 
     return (
         <div>
-            <div className="flex items-center gap-4 mb-6">
-                <Link href="/exceptions" className="text-gray-500 hover:text-gray-700">
-                    ← Back to Exceptions
-                </Link>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Link href="/exceptions" className="text-gray-500 hover:text-gray-700">← Exceptions</Link>
+            <ErrorBanner message={error} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Exception Details */}
                     <div className="card">
-                        <div className="flex justify-between items-start mb-4">
+                        <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
                             <div>
-                                <h1 className="text-xl font-bold text-gray-900">{exception.title}</h1>
-                                <p className="text-gray-500 capitalize">{exception.category.replace('_', ' ')}</p>
+                                <h1 className="text-xl font-bold text-gray-900">{exc.title}</h1>
+                                <p className="text-gray-500">{label(exc.category)}</p>
                             </div>
-                            <span className={`status-badge severity-${exception.severity}`}>
-                                {exception.severity}
-                            </span>
+                            <div className="flex gap-2">
+                                <span className={`status-badge severity-${exc.severity}`}>{exc.severity}</span>
+                                <StatusBadge status={exc.status} />
+                            </div>
                         </div>
-
-                        <p className="text-gray-700 mb-4">{exception.description}</p>
-
+                        {exc.description && <p className="text-gray-800 mb-4">{exc.description}</p>}
+                        <h2 className="text-sm font-medium text-gray-500 mb-1">What the rules flagged</h2>
+                        {flags.length ? (
+                            <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1 mb-4">{flags.map((f) => <li key={f}>{f}</li>)}</ul>
+                        ) : (
+                            <p className="text-sm text-gray-700 mb-4">Nothing: the model held it on its own reading.</p>
+                        )}
                         <dl className="grid grid-cols-2 gap-4 border-t border-gray-200 pt-4">
-                            <div>
-                                <dt className="text-sm text-gray-500">Invoice</dt>
-                                <dd>
-                                    <Link href={`/invoices/${exception.invoice_id}`} className="text-primary-600 hover:text-primary-800">
-                                        {exception.invoice_number}
-                                    </Link>
-                                </dd>
-                            </div>
-                            <div>
-                                <dt className="text-sm text-gray-500">Owner Role</dt>
-                                <dd className="text-sm font-medium text-gray-900 capitalize">{exception.owner_role.replace('_', ' ')}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-sm text-gray-500">Created</dt>
-                                <dd className="text-sm font-medium text-gray-900">{exception.created_at}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-sm text-gray-500">SLA Deadline</dt>
-                                <dd className={`text-sm font-medium ${exception.sla_breached ? 'text-red-600' : 'text-gray-900'}`}>
-                                    {exception.sla_deadline}
-                                    {exception.sla_breached && ' (Breached)'}
-                                </dd>
-                            </div>
+                            <Field name="Invoice">
+                                <Link href={`/invoices/${exc.invoice_id}`} className="text-primary-600 hover:text-primary-800">
+                                    {exc.invoice?.invoice_number}
+                                </Link>{' '}
+                                · {exc.invoice?.vendor_name} · {money(exc.invoice?.total_amount)}
+                            </Field>
+                            <Field name="For the">{label(exc.owner_role)}</Field>
+                            <Field name="Held">{when(exc.created_at)}</Field>
+                            <Field name="Due">
+                                <span className={open && overdue(exc.sla_deadline) ? 'text-red-600' : ''}>
+                                    {when(exc.sla_deadline)}
+                                    {open && overdue(exc.sla_deadline) && ' (overdue)'}
+                                </span>
+                            </Field>
                         </dl>
-                    </div>
-
-                    {/* Exception Details JSON */}
-                    <div className="card">
-                        <h2 className="text-lg font-medium text-gray-900 mb-4">Details</h2>
-                        <pre className="bg-gray-50 p-4 rounded-md text-sm overflow-auto">
-                            {JSON.stringify(exception.details, null, 2)}
-                        </pre>
                     </div>
                 </div>
 
-                {/* Resolution Form */}
-                <div className="card">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Resolution</h2>
-                    <form className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Action
-                            </label>
-                            <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                <option value="">Select action...</option>
-                                <option value="approve">Approve Invoice</option>
-                                <option value="reject">Reject Invoice</option>
-                                <option value="escalate">Escalate</option>
-                                <option value="reprocess">Reprocess</option>
-                            </select>
+                <div className="card h-fit">
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Decision</h2>
+                    {exc.resolution_action && (
+                        <div className="mb-4 text-sm text-gray-700">
+                            <p><strong>{label(exc.resolution_action)}</strong>{exc.resolved_at && <>, {when(exc.resolved_at)}</>}</p>
+                            <p className="mt-1">{exc.resolution}</p>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Resolution Notes
-                            </label>
+                    )}
+                    {open && (
+                        <form action={resolveException.bind(null, id)} className="space-y-4">
+                            <fieldset className="space-y-2">
+                                {ACTIONS.map((a) => (
+                                    <label key={a.value} className="flex items-start gap-2 text-sm text-gray-800">
+                                        <input type="radio" name="action" value={a.value} required className="mt-1" />
+                                        {a.label}
+                                    </label>
+                                ))}
+                            </fieldset>
                             <textarea
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                                name="resolution"
+                                required
                                 rows={4}
-                                placeholder="Explain the resolution decision..."
+                                placeholder="Why: what you checked, and with whom"
+                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                             />
-                        </div>
-                        <button type="submit" className="btn-primary w-full">
-                            Resolve Exception
-                        </button>
-                    </form>
+                            <Submit busy="Saving…">Record decision</Submit>
+                        </form>
+                    )}
                 </div>
             </div>
         </div>

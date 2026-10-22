@@ -72,13 +72,13 @@ install:
 	pip install -e ".[dev]"
 
 install-web:
-	cd apps/web && npm install
+	cd apps/web && pnpm install
 
 dev-api:
 	uvicorn apps.api.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-web:
-	cd apps/web && npm run dev
+	cd apps/web && pnpm dev
 
 dev-celery:
 	celery -A apps.api.tasks.celery_app worker --loglevel=info

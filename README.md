@@ -7,6 +7,17 @@ reads the documents and says pay or hold; a hold goes to a person, never
 straight to payment or rejection. Every step is logged, and every model call is
 recorded at what it cost.
 
+<p>
+<img src="docs/invoice-pdf.png" width="44%" alt="A one-page PDF invoice from Keystone Safety Products asking to be paid into First Harbor Bank, account ending 5185, 'as agreed by phone'">
+<img src="docs/invoice-verdict.png" width="54%" alt="The dashboard's page for that invoice: held for a person, with Haiku's reason, the rules having flagged nothing, the audit trail and a model cost of $0.0014">
+</p>
+
+A PDF invoice from the benchmark, and the dashboard after Haiku read and
+reviewed it. The rules found nothing wrong: the prices, quantities and totals
+match the PO and the goods receipt. Haiku held it because it asks to be paid
+into a bank account the vendor's record does not have, a change "agreed by
+phone". Reading and reviewing it cost $0.0014.
+
 ## Result
 
 Measured on 600 invoices with known right answers, in three rounds of 200,
@@ -83,6 +94,12 @@ and the cost figures were estimates; both are now real.
    that is what is recorded and summed against a daily cap per tenant. Every
    step is written to an audit trail, and a run can be replayed to see whether
    its outcome drifts.
+6. **A person** (`apps/web`): a Next.js dashboard takes PDFs, lists the
+   invoices and the queue of held ones, and shows each decision with the
+   model's reason, what the rules flagged, the audit trail and what the
+   models cost. A person's decision on a held invoice is recorded with who
+   made it: approve pays it, reject rejects it, escalate leaves it held for
+   someone senior, reprocess runs the checks again.
 
 Claude is called through the `claude` command on your own login, so a Claude
 subscription pays for the reviews and no API key is needed. A hosted copy
@@ -95,7 +112,8 @@ no Docker and no model calls for the tests.
 
 ```bash
 uv venv && uv pip install -e ".[dev]"
-.venv/bin/python -m pytest apps/api/tests evals/tests      # 373 tests, on SQLite
+.venv/bin/python -m pytest apps/api/tests evals/tests      # 394 tests, on SQLite
+cd apps/web && pnpm install && pnpm test && pnpm build      # the dashboard: Node 22.18+
 ```
 
 The benchmark needs the `claude` command, logged in:
@@ -130,6 +148,21 @@ duplicate, a price above the PO, 25 units billed where 20 arrived, the wrong
 vendor, and a second invoice for goods already billed. That run cost under a
 cent.
 
+To try the dashboard with Claude and without Docker, on a SQLite file (the
+demo calls Haiku, for under a cent):
+
+```bash
+export DATABASE_URL=sqlite+aiosqlite:///./demo.db
+.venv/bin/python scripts/demo.py                         # sample records and invoices, decided
+.venv/bin/python scripts/demo_pdfs.py pdfs/              # three benchmark invoices as PDFs
+.venv/bin/uvicorn apps.api.main:app --port 8000          # the API
+cd apps/web && API_URL=http://localhost:8000 pnpm dev    # the dashboard, on :3000
+```
+
+Then upload the PDFs on the Invoices page and process them: one asks to be
+paid into a bank account that is not on file, one is clean, and one has a
+line that does not add up.
+
 Demo logins: `controller`, `ap_manager` and `bpo_operator`, password `demo123`.
 
 ## Settings
@@ -152,11 +185,12 @@ Interactive docs at `/docs`. The main endpoints:
 - `POST /ingest/invoice`: submit an invoice as JSON
 - `POST /ingest/invoice-pdf`: submit an invoice PDF as the request body, for Claude to read
 - `POST /pipeline/run/{invoice_id}`: process it
-- `GET /invoices`, `GET /exceptions`: lists, filterable by status, category and severity
+- `GET /invoices`, `GET /exceptions`: lists, filterable by status, and exceptions by category and invoice
 - `POST /exceptions/{id}/resolve`: a person's decision on a held invoice
 - `GET /audit/{invoice_id}`: the audit trail
 - `POST /audit/replay/{invoice_id}/{run_id}`: replay a run and report drift
-- `GET /metrics/cost`: model spend over a period
+- `GET /metrics/cost`: model spend over a period, by model
+- `GET /metrics/cost/invoices/{id}`: one invoice's model calls and their cost
 
 ## Limitations
 
@@ -166,4 +200,5 @@ Interactive docs at `/docs`. The main endpoints:
   matched (see `BACKLOG.md`); it goes to the review, which reads it as it is.
 - The fuzzy duplicate check only looks a week either side, which is why late
   resubmissions get past the rules.
-- Logins are demo accounts with a development secret.
+- Logins are demo accounts with a development secret, and roles are not
+  enforced: any user can resolve any exception, whichever role it is for.

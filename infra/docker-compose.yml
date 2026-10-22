@@ -98,7 +98,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      # The dashboard calls the API from its server, inside this network.
       API_URL: http://api:8000
     volumes:
       - ../apps/web:/app
@@ -108,7 +108,7 @@ services:
       - api
     networks:
       - ap_network
-    command: npm run dev
+    command: pnpm dev
 
 volumes:
   postgres_data:

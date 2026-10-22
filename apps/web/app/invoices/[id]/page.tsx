@@ -1,171 +1,155 @@
 import Link from 'next/link'
 
-interface AuditEvent {
-    id: string
-    step: string
-    duration_ms: number
-    completed_at: string
-    status: string
+import { processInvoice } from '@/app/actions'
+import { Submit } from '@/app/client'
+import { ErrorBanner, Field, StatusBadge } from '@/app/ui'
+import { api } from '@/lib/api'
+import { describe, latestDecision, type Decision } from '@/lib/decision'
+import { cost, day, money, when } from '@/lib/format'
+import type { AuditTimeline, ExceptionPage, Invoice, InvoiceCost } from '@/lib/types'
+
+function DecisionCard({ decision, exceptionId }: { decision: Decision; exceptionId?: string }) {
+    const approved = decision.outcome === 'approved'
+    return (
+        <div className={`card border-l-4 ${approved ? 'border-l-green-500' : 'border-l-orange-500'}`}>
+            <h2 className="text-lg font-medium text-gray-900 mb-1">{approved ? 'Approved for payment' : 'Held for a person'}</h2>
+            <p className="text-gray-800 mb-4">{decision.why}</p>
+            {decision.verdicts.map((v, i) => (
+                <p key={i} className="text-sm text-gray-600">
+                    {v.model}: <strong>{v.decision}</strong>
+                    {v.reason !== 'none' && <> on {v.reason.replaceAll('_', ' ')}</>}, {Math.round(v.confidence * 100)}% sure
+                </p>
+            ))}
+            {decision.unreadable > 0 && <p className="text-sm text-gray-600">{decision.unreadable} unreadable answer(s) asked again</p>}
+            <h3 className="text-sm font-medium text-gray-500 mt-4 mb-1">What the rules flagged</h3>
+            {decision.flags.length ? (
+                <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                    {decision.flags.map((f) => <li key={f}>{f}</li>)}
+                </ul>
+            ) : (
+                <p className="text-sm text-gray-700">Nothing</p>
+            )}
+            {exceptionId && (
+                <Link href={`/exceptions/${exceptionId}`} className="btn-primary inline-block mt-4 text-sm">Decide</Link>
+            )}
+        </div>
+    )
 }
 
-interface InvoiceDetail {
-    id: string
-    invoice_number: string
-    vendor_name: string
-    vendor_id: string
-    invoice_date: string
-    due_date: string
-    po_number: string
-    total_amount: string
-    status: string
-    line_items: Array<{
-        line_number: number
-        description: string
-        quantity: number
-        unit_price: string
-        amount: string
-    }>
-    audit_events: AuditEvent[]
-}
-
-async function getInvoice(id: string): Promise<InvoiceDetail> {
-    // Mock data for demo
-    return {
-        id,
-        invoice_number: 'INV-2024-001',
-        vendor_name: 'Acme Supplies Inc',
-        vendor_id: 'V001',
-        invoice_date: '2024-01-15',
-        due_date: '2024-02-14',
-        po_number: 'PO-2024-001',
-        total_amount: '$5,400.00',
-        status: 'approved',
-        line_items: [
-            { line_number: 1, description: 'Widget A', quantity: 100, unit_price: '$25.00', amount: '$2,500.00' },
-            { line_number: 2, description: 'Widget B', quantity: 50, unit_price: '$50.00', amount: '$2,500.00' },
-        ],
-        audit_events: [
-            { id: '1', step: 'ingestion', duration_ms: 15, completed_at: '2024-01-15 10:00:01', status: 'success' },
-            { id: '2', step: 'validation', duration_ms: 45, completed_at: '2024-01-15 10:00:02', status: 'success' },
-            { id: '3', step: 'matching', duration_ms: 120, completed_at: '2024-01-15 10:00:03', status: 'success' },
-            { id: '4', step: 'llm_call', duration_ms: 850, completed_at: '2024-01-15 10:00:04', status: 'success' },
-            { id: '5', step: 'verification', duration_ms: 30, completed_at: '2024-01-15 10:00:05', status: 'success' },
-            { id: '6', step: 'pipeline_completed', duration_ms: 5, completed_at: '2024-01-15 10:00:05', status: 'success' },
-        ],
-    }
-}
-
-export default async function InvoiceDetailPage({ params }: { params: { id: string } }) {
-    const invoice = await getInvoice(params.id)
+export default async function InvoicePage({ params, searchParams }: {
+    params: Promise<{ id: string }>
+    searchParams: Promise<{ error?: string }>
+}) {
+    const [{ id }, { error }] = await Promise.all([params, searchParams])
+    const [invoice, timeline, spend] = await Promise.all([
+        api<Invoice>(`/invoices/${id}`),
+        api<AuditTimeline>(`/audit/${id}`),
+        api<InvoiceCost>(`/metrics/cost/invoices/${id}`),
+    ])
+    const decision = latestDecision(timeline.events)
+    const held = invoice.status === 'exception'
+        ? (await api<ExceptionPage>(`/exceptions?invoice_id=${id}`)).items.find((e) => e.status !== 'resolved')
+        : undefined
+    const extra = invoice.extracted_data ?? {}
 
     return (
         <div>
-            <div className="flex items-center gap-4 mb-6">
-                <Link href="/invoices" className="text-gray-500 hover:text-gray-700">
-                    ← Back to Invoices
-                </Link>
-            </div>
-
-            <div className="flex justify-between items-start mb-6">
+            <Link href="/invoices" className="text-gray-500 hover:text-gray-700">← Invoices</Link>
+            <div className="flex flex-wrap justify-between items-start gap-4 mt-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">{invoice.invoice_number}</h1>
-                    <p className="text-gray-500">{invoice.vendor_name}</p>
+                    <p className="text-gray-500">{invoice.vendor_name} · {money(invoice.total_amount, invoice.currency)}</p>
                 </div>
-                <span className={`status-badge ${invoice.status === 'approved' ? 'status-approved' : 'status-exception'}`}>
-                    {invoice.status}
-                </span>
+                <div className="flex items-center gap-3">
+                    <StatusBadge status={invoice.status} />
+                    {invoice.status === 'pending' && (
+                        <form action={processInvoice.bind(null, id)}>
+                            <Submit busy="Checking…">Process</Submit>
+                        </form>
+                    )}
+                </div>
             </div>
+            <ErrorBanner message={error} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Invoice Details */}
                 <div className="lg:col-span-2 space-y-6">
+                    {decision && <DecisionCard decision={decision} exceptionId={held?.id} />}
+
                     <div className="card">
-                        <h2 className="text-lg font-medium text-gray-900 mb-4">Invoice Details</h2>
-                        <dl className="grid grid-cols-2 gap-4">
-                            <div>
-                                <dt className="text-sm text-gray-500">Invoice Number</dt>
-                                <dd className="text-sm font-medium text-gray-900">{invoice.invoice_number}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-sm text-gray-500">PO Number</dt>
-                                <dd className="text-sm font-medium text-gray-900">{invoice.po_number}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-sm text-gray-500">Invoice Date</dt>
-                                <dd className="text-sm font-medium text-gray-900">{invoice.invoice_date}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-sm text-gray-500">Due Date</dt>
-                                <dd className="text-sm font-medium text-gray-900">{invoice.due_date}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-sm text-gray-500">Vendor ID</dt>
-                                <dd className="text-sm font-medium text-gray-900">{invoice.vendor_id}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-sm text-gray-500">Total Amount</dt>
-                                <dd className="text-sm font-medium text-gray-900">{invoice.total_amount}</dd>
-                            </div>
+                        <h2 className="text-lg font-medium text-gray-900 mb-4">The invoice</h2>
+                        <dl className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <Field name="Invoice date">{day(invoice.invoice_date)}</Field>
+                            <Field name="Due">{day(invoice.due_date)}</Field>
+                            <Field name="PO">{invoice.po_number ?? '—'}</Field>
+                            <Field name="Vendor on file">{invoice.vendor_id}</Field>
+                            <Field name="Pay to">
+                                {extra.remit_to ? `${extra.remit_to.bank}, account ending ${extra.remit_to.account_last4}` : '—'}
+                            </Field>
+                            <Field name="Received as">
+                                {invoice.document_type === 'pdf'
+                                    ? `PDF${invoice.original_filename ? ` (${invoice.original_filename})` : ''}, read by ${extra.read_by ?? 'a model'}`
+                                    : invoice.document_type.toUpperCase()}
+                            </Field>
+                            {extra.service_period && <Field name="Service period from">{day(extra.service_period)}</Field>}
                         </dl>
+                        {extra.notes && <p className="mt-4 text-sm text-gray-700 bg-gray-50 rounded-md p-3">“{extra.notes}”</p>}
                     </div>
 
-                    {/* Line Items */}
-                    <div className="card p-0 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-200">
-                            <h2 className="text-lg font-medium text-gray-900">Line Items</h2>
-                        </div>
+                    <div className="card p-0 overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                    {['#', 'Description', 'Qty', 'Unit price', 'Amount'].map((h, i) => (
+                                        <th key={h} className={`px-6 py-3 text-xs font-medium text-gray-500 uppercase ${i > 1 ? 'text-right' : 'text-left'}`}>{h}</th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {invoice.line_items.map((item) => (
-                                    <tr key={item.line_number}>
-                                        <td className="px-6 py-4 text-sm text-gray-500">{item.line_number}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900">{item.description}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 text-right">{item.quantity}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 text-right">{item.unit_price}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">{item.amount}</td>
+                                {(invoice.line_items ?? []).map((line) => (
+                                    <tr key={line.line_number}>
+                                        <td className="px-6 py-3 text-sm text-gray-500">{line.line_number}</td>
+                                        <td className="px-6 py-3 text-sm text-gray-900">{line.description}</td>
+                                        <td className="px-6 py-3 text-sm text-gray-900 text-right">{Number(line.quantity)}</td>
+                                        <td className="px-6 py-3 text-sm text-gray-900 text-right">{money(line.unit_price, invoice.currency)}</td>
+                                        <td className="px-6 py-3 text-sm text-gray-900 text-right font-medium">{money(line.amount, invoice.currency)}</td>
                                     </tr>
                                 ))}
                             </tbody>
+                            <tfoot className="text-sm">
+                                <tr><td colSpan={4} className="px-6 pt-3 text-right text-gray-500">Subtotal</td><td className="px-6 pt-3 text-right">{money(invoice.subtotal, invoice.currency)}</td></tr>
+                                <tr><td colSpan={4} className="px-6 text-right text-gray-500">Tax</td><td className="px-6 text-right">{money(invoice.tax_amount, invoice.currency)}</td></tr>
+                                <tr><td colSpan={4} className="px-6 pb-3 text-right font-medium">Total</td><td className="px-6 pb-3 text-right font-semibold">{money(invoice.total_amount, invoice.currency)}</td></tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
 
-                {/* Audit Timeline */}
-                <div className="card">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Audit Timeline</h2>
-                    <div className="space-y-4">
-                        {invoice.audit_events.map((event, idx) => (
-                            <div key={event.id} className="flex gap-3">
-                                <div className="flex flex-col items-center">
-                                    <div className={`w-3 h-3 rounded-full ${event.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`} />
-                                    {idx < invoice.audit_events.length - 1 && (
-                                        <div className="w-0.5 h-full bg-gray-200 mt-1" />
-                                    )}
-                                </div>
-                                <div className="flex-1 pb-4">
-                                    <p className="text-sm font-medium text-gray-900 capitalize">
-                                        {event.step.replace('_', ' ')}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                        {event.completed_at} • {event.duration_ms}ms
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
+                <div className="space-y-6">
+                    <div className="card">
+                        <h2 className="text-lg font-medium text-gray-900 mb-1">Model cost</h2>
+                        <p className="text-3xl font-semibold text-gray-900 mb-3">{cost(spend.total_cost_usd)}</p>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                            {spend.calls.map((call, i) => (
+                                <li key={i}>{call.model_id}: {call.input_tokens.toLocaleString()} tokens in, {call.output_tokens} out, {cost(call.cost_usd)}</li>
+                            ))}
+                            {spend.calls.length === 0 && <li>No model calls.</li>}
+                        </ul>
                     </div>
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                        <button className="btn-secondary w-full text-sm">
-                            Request Replay
-                        </button>
+
+                    <div className="card">
+                        <h2 className="text-lg font-medium text-gray-900 mb-4">Audit trail</h2>
+                        {timeline.events.length === 0 && <p className="text-sm text-gray-500">Not processed yet.</p>}
+                        <ol className="space-y-3">
+                            {timeline.events.map((event) => (
+                                <li key={event.id} className="flex gap-3">
+                                    <span className={`mt-1.5 w-2.5 h-2.5 shrink-0 rounded-full ${event.actor_type === 'user' ? 'bg-primary-600' : 'bg-gray-400'}`} />
+                                    <div>
+                                        <p className="text-sm text-gray-900">{describe(event)}</p>
+                                        <p className="text-xs text-gray-500">{when(event.completed_at)} · {event.duration_ms.toLocaleString()} ms</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
                     </div>
                 </div>
             </div>

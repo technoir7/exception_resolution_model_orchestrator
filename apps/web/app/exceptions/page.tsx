@@ -1,149 +1,81 @@
 import Link from 'next/link'
 
-interface Exception {
-    id: string
-    invoice_id: string
-    invoice_number: string
-    category: string
-    severity: string
-    status: string
-    title: string
-    sla_deadline: string
-    sla_breached: boolean
-    created_at: string
-}
+import { Pager, StatusBadge, Tabs } from '@/app/ui'
+import { api } from '@/lib/api'
+import { label, money, overdue, when } from '@/lib/format'
+import type { ExceptionPage } from '@/lib/types'
 
-async function getExceptions(): Promise<Exception[]> {
-    return [
-        {
-            id: '1',
-            invoice_id: '3',
-            invoice_number: 'INV-2024-003',
-            category: 'missing_po',
-            severity: 'high',
-            status: 'open',
-            title: 'PO PO-MISSING-999 not found',
-            sla_deadline: '2024-01-19 18:00',
-            sla_breached: false,
-            created_at: '2024-01-18 10:00',
-        },
-        {
-            id: '2',
-            invoice_id: '4',
-            invoice_number: 'INV-2024-004',
-            category: 'duplicate',
-            severity: 'high',
-            status: 'open',
-            title: 'Exact duplicate of INV-2024-001',
-            sla_deadline: '2024-01-15 14:00',
-            sla_breached: true,
-            created_at: '2024-01-15 10:00',
-        },
-        {
-            id: '3',
-            invoice_id: '5',
-            invoice_number: 'INV-2024-005',
-            category: 'amount_variance',
-            severity: 'high',
-            status: 'open',
-            title: 'Amount variance 20% exceeds tolerance',
-            sla_deadline: '2024-01-21 08:00',
-            sla_breached: false,
-            created_at: '2024-01-20 12:00',
-        },
-        {
-            id: '4',
-            invoice_id: '9',
-            invoice_number: 'INV-2024-009',
-            category: 'vendor_mismatch',
-            severity: 'low',
-            status: 'open',
-            title: 'Vendor V999 does not match PO vendor V001',
-            sla_deadline: '2024-01-23 10:00',
-            sla_breached: false,
-            created_at: '2024-01-21 10:00',
-        },
-    ]
-}
+const STATUSES = [
+    { value: 'open', label: 'Open' },
+    { value: 'escalated', label: 'Escalated' },
+    { value: 'resolved', label: 'Resolved' },
+    { value: '', label: 'All' },
+]
 
-function getSeverityClass(severity: string): string {
-    return `severity-${severity}`
-}
+// apps/api/models/exception.py: ExceptionCategory
+const CATEGORIES = [
+    'amount_variance', 'quantity_variance', 'duplicate', 'bank_details', 'vendor_mismatch', 'missing_po',
+    'missing_receipt', 'missing_fields', 'currency_mismatch', 'llm_validation_failed', 'other',
+]
 
-export default async function ExceptionsPage() {
-    const exceptions = await getExceptions()
+type Search = { status?: string; category?: string; page?: string }
+
+export default async function ExceptionsPage({ searchParams }: { searchParams: Promise<Search> }) {
+    const { status = 'open', category = '', page = '1' } = await searchParams
+    const filters = (extra: Record<string, string> = {}) =>
+        new URLSearchParams({ ...(status && { status }), ...(category && { category }), ...extra })
+    const queue = await api<ExceptionPage>(`/exceptions?${filters({ page })}`)
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Exception Queue</h1>
-                    <p className="text-gray-500">{exceptions.length} open exceptions</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Exceptions</h1>
+                    <p className="text-gray-500">{queue.open_count} waiting for a person</p>
                 </div>
-                <div className="flex gap-2">
-                    <select className="border border-gray-300 rounded-md px-3 py-2 text-sm">
-                        <option value="">All Categories</option>
-                        <option value="missing_po">Missing PO</option>
-                        <option value="duplicate">Duplicate</option>
-                        <option value="amount_variance">Amount Variance</option>
-                        <option value="vendor_mismatch">Vendor Mismatch</option>
+                <form className="flex gap-2">
+                    <input type="hidden" name="status" value={status} />
+                    <select name="category" defaultValue={category} className="border border-gray-300 rounded-md px-3 py-2 text-sm">
+                        <option value="">Every category</option>
+                        {CATEGORIES.map((c) => <option key={c} value={c}>{label(c)}</option>)}
                     </select>
-                    <select className="border border-gray-300 rounded-md px-3 py-2 text-sm">
-                        <option value="">All Severities</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
-                    </select>
-                </div>
+                    <button type="submit" className="btn-secondary text-sm">Filter</button>
+                </form>
             </div>
+            <Tabs
+                current={status}
+                tabs={STATUSES.map((s) => ({ ...s, href: `/exceptions?${new URLSearchParams({ status: s.value, ...(category && { category }) })}` }))}
+            />
 
             <div className="space-y-4">
-                {exceptions.map((exc) => (
-                    <div key={exc.id} className={`card ${exc.sla_breached ? 'border-red-300 bg-red-50' : ''}`}>
-                        <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Link href={`/exceptions/${exc.id}`} className="text-lg font-medium text-gray-900 hover:text-primary-600">
-                                        {exc.title}
-                                    </Link>
-                                    <span className={`status-badge ${getSeverityClass(exc.severity)}`}>
-                                        {exc.severity}
-                                    </span>
-                                    {exc.sla_breached && (
-                                        <span className="status-badge bg-red-600 text-white">
-                                            SLA Breached
-                                        </span>
-                                    )}
+                {queue.items.map((exc) => {
+                    const late = (exc.status === 'open' || exc.status === 'escalated') && overdue(exc.sla_deadline)
+                    return (
+                        <Link key={exc.id} href={`/exceptions/${exc.id}`} className={`card block hover:border-primary-300 ${late ? 'border-red-300' : ''}`}>
+                            <div className="flex flex-wrap justify-between items-start gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-medium text-gray-900">{exc.title}</span>
+                                        <span className={`status-badge severity-${exc.severity}`}>{exc.severity}</span>
+                                        {exc.status !== 'open' && <StatusBadge status={exc.status} />}
+                                    </div>
+                                    <p className="text-sm text-gray-500">
+                                        {exc.invoice?.invoice_number} · {exc.invoice?.vendor_name} · {money(exc.invoice?.total_amount)} · {label(exc.category)} · for the {label(exc.owner_role)}
+                                    </p>
                                 </div>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                    <Link href={`/invoices/${exc.invoice_id}`} className="hover:text-primary-600">
-                                        {exc.invoice_number}
-                                    </Link>
-                                    <span>•</span>
-                                    <span className="capitalize">{exc.category.replace('_', ' ')}</span>
-                                    <span>•</span>
-                                    <span>Created {exc.created_at}</span>
+                                <div className="text-right text-sm">
+                                    <p className="text-gray-500">{exc.status === 'resolved' ? 'Resolved' : 'Due'}</p>
+                                    <p className={late ? 'text-red-600 font-medium' : 'text-gray-900'}>
+                                        {when(exc.status === 'resolved' && exc.resolved_at ? exc.resolved_at : exc.sla_deadline)}
+                                    </p>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-sm text-gray-500">SLA Deadline</p>
-                                <p className={`text-sm font-medium ${exc.sla_breached ? 'text-red-600' : 'text-gray-900'}`}>
-                                    {exc.sla_deadline}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="mt-4 flex gap-2">
-                            <Link href={`/exceptions/${exc.id}`} className="btn-primary text-sm">
-                                Review
-                            </Link>
-                            <button className="btn-secondary text-sm">
-                                Assign to Me
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                        </Link>
+                    )
+                })}
+                {queue.items.length === 0 && <p className="text-sm text-gray-500">No exceptions here.</p>}
             </div>
+            <Pager page={queue.page} pages={queue.pages} href={(p) => `/exceptions?${filters({ page: String(p) })}`} />
         </div>
     )
 }

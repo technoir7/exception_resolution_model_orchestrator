@@ -7,3 +7,5 @@ node_modules/
 .next/
 .pytest_cache/
 .coverage
+next-env.d.ts
+*.tsbuildinfo

@@ -60,3 +60,7 @@ body {
 .severity-critical {
   @apply bg-red-100 text-red-800;
 }
+
+.status-rejected {
+  @apply bg-gray-200 text-gray-800;
+}

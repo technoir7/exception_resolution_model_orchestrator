@@ -1,101 +1,74 @@
 import Link from 'next/link'
 
-// Types for dashboard data
-interface DashboardStats {
-    totalInvoices: number
-    touchlessCount: number
-    exceptionCount: number
-    touchlessRate: number
-    avgCostPerInvoice: string
-    openExceptions: number
-    slaBreached: number
-}
+import { Stat } from '@/app/ui'
+import { api } from '@/lib/api'
+import { cost, label, money, overdue } from '@/lib/format'
+import type { CostSummary, ExceptionPage } from '@/lib/types'
 
-async function getDashboardStats(): Promise<DashboardStats> {
-    // In production, fetch from API
-    // For demo, return mock data
-    return {
-        totalInvoices: 10,
-        touchlessCount: 6,
-        exceptionCount: 4,
-        touchlessRate: 60,
-        avgCostPerInvoice: '$0.023',
-        openExceptions: 4,
-        slaBreached: 0,
+export default async function OverviewPage() {
+    const [spend, open] = await Promise.all([
+        api<CostSummary>('/metrics/cost'),
+        api<ExceptionPage>('/exceptions?status=open&page_size=5'),
+    ])
+    const counts = spend.invoices_by_status
+    const invoices = Object.values(counts).reduce((a, b) => a + (b ?? 0), 0)
+    const approved = counts.approved ?? 0
+    const capUsed = Math.min(100, (Number(spend.spent_today) / Number(spend.daily_cap_usd)) * 100)
+
+    if (invoices === 0 && open.total === 0) {
+        return (
+            <div className="card max-w-2xl">
+                <h1 className="text-xl font-semibold text-gray-900 mb-2">No invoices yet</h1>
+                <p className="text-sm text-gray-700">
+                    Upload a PDF on the <Link href="/invoices" className="text-primary-600">Invoices</Link> page, or load the
+                    samples with <code>make seed</code> and <code>make demo</code>.
+                </p>
+            </div>
+        )
     }
-}
-
-export default async function DashboardPage() {
-    const stats = await getDashboardStats()
 
     return (
         <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">Overview</h1>
+            <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <Stat title="Invoices, last 30 days" value={invoices} note={`${counts.pending ?? 0} not yet processed`} />
+                <Stat
+                    title="Approved for payment"
+                    value={approved}
+                    tone="text-green-600"
+                    note={invoices ? `${Math.round((approved / invoices) * 100)}% of invoices` : undefined}
+                />
+                <Stat title="Waiting for a person" value={open.total} tone="text-orange-600" note={<Link href="/exceptions" className="text-primary-600">Open the queue</Link>} />
+                <Stat title="Model spend" value={cost(spend.total_cost_usd)} note={`${cost(spend.cost_per_invoice)} per invoice`} />
+            </dl>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-                <div className="card">
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Invoices</dt>
-                    <dd className="mt-1 text-3xl font-semibold text-gray-900">{stats.totalInvoices}</dd>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <div className="card lg:col-span-2">
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Latest held</h2>
+                    {open.items.length === 0 && <p className="text-sm text-gray-500">Nothing is waiting for a person.</p>}
+                    <ul className="divide-y divide-gray-100">
+                        {open.items.map((exc) => (
+                            <li key={exc.id} className="py-3">
+                                <Link href={`/exceptions/${exc.id}`} className="font-medium text-gray-900 hover:text-primary-600">
+                                    {exc.title}
+                                </Link>
+                                <p className="text-sm text-gray-500">
+                                    {exc.invoice?.invoice_number} · {exc.invoice?.vendor_name} · {money(exc.invoice?.total_amount)} · {label(exc.category)}
+                                    {overdue(exc.sla_deadline) && <span className="ml-2 text-red-600 font-medium">overdue</span>}
+                                </p>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
-
                 <div className="card">
-                    <dt className="text-sm font-medium text-gray-500 truncate">Touchless Rate</dt>
-                    <dd className="mt-1 text-3xl font-semibold text-green-600">{stats.touchlessRate}%</dd>
-                    <p className="text-sm text-gray-500">{stats.touchlessCount} of {stats.totalInvoices}</p>
-                </div>
-
-                <div className="card">
-                    <dt className="text-sm font-medium text-gray-500 truncate">Open Exceptions</dt>
-                    <dd className="mt-1 text-3xl font-semibold text-orange-600">{stats.openExceptions}</dd>
-                    {stats.slaBreached > 0 && (
-                        <p className="text-sm text-red-600">{stats.slaBreached} SLA breached</p>
-                    )}
-                </div>
-
-                <div className="card">
-                    <dt className="text-sm font-medium text-gray-500 truncate">Avg Cost/Invoice</dt>
-                    <dd className="mt-1 text-3xl font-semibold text-gray-900">{stats.avgCostPerInvoice}</dd>
-                </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="card">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
-                    <div className="space-y-3">
-                        <Link href="/invoices" className="btn-primary block text-center">
-                            View All Invoices
-                        </Link>
-                        <Link href="/exceptions" className="btn-secondary block text-center">
-                            Review Exception Queue
-                        </Link>
-                        <Link href="/cost" className="btn-secondary block text-center">
-                            View Cost Dashboard
-                        </Link>
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Model spend today</h2>
+                    <p className="text-3xl font-semibold text-gray-900">{cost(spend.spent_today)}</p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 my-3">
+                        <div className="bg-primary-600 h-2 rounded-full" style={{ width: `${capUsed}%` }} />
                     </div>
-                </div>
-
-                <div className="card">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">System Status</h2>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">API</span>
-                            <span className="status-badge status-approved">Healthy</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Database</span>
-                            <span className="status-badge status-approved">Connected</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Celery Worker</span>
-                            <span className="status-badge status-approved">Running</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">LLM Provider</span>
-                            <span className="status-badge status-processing">Mock (Demo)</span>
-                        </div>
-                    </div>
+                    <p className="text-sm text-gray-500">
+                        of a {money(spend.daily_cap_usd)} daily cap. Past it, invoices go to a person without a model&apos;s review.
+                    </p>
                 </div>
             </div>
         </div>

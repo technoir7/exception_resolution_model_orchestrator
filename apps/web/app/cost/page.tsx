@@ -1,141 +1,64 @@
-interface CostMetrics {
-    total_cost: string
-    avg_cost_per_invoice: string
-    avg_cost_per_verified: string
-    touchless_rate: number
-    cache_hit_rate: number
-    cost_by_tier: Array<{
-        tier: string
-        cost: string
-        calls: number
-        percentage: number
-    }>
-    cost_by_exception: Array<{
-        category: string
-        cost: string
-        count: number
-    }>
+import { Stat, Tabs } from '@/app/ui'
+import { api } from '@/lib/api'
+import { cost, day, money } from '@/lib/format'
+import type { CostSummary } from '@/lib/types'
+
+const PERIODS = [7, 30, 90]
+
+function daysBefore(isoDate: string, days: number): string {
+    const d = new Date(isoDate + 'T00:00:00Z')
+    d.setUTCDate(d.getUTCDate() - days)
+    return d.toISOString().slice(0, 10)
 }
 
-async function getCostMetrics(): Promise<CostMetrics> {
-    return {
-        total_cost: '$0.23',
-        avg_cost_per_invoice: '$0.023',
-        avg_cost_per_verified: '$0.038',
-        touchless_rate: 60,
-        cache_hit_rate: 33,
-        cost_by_tier: [
-            { tier: 'Tier A (GPT-3.5)', cost: '$0.05', calls: 6, percentage: 22 },
-            { tier: 'Tier B (GPT-4-mini)', cost: '$0.12', calls: 3, percentage: 52 },
-            { tier: 'Tier C (GPT-4)', cost: '$0.06', calls: 1, percentage: 26 },
-        ],
-        cost_by_exception: [
-            { category: 'Amount Variance', cost: '$0.04', count: 2 },
-            { category: 'Missing PO', cost: '$0.02', count: 1 },
-            { category: 'Duplicate', cost: '$0.01', count: 1 },
-        ],
-    }
-}
-
-export default async function CostDashboardPage() {
-    const metrics = await getCostMetrics()
+export default async function SpendPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
+    const { days = '30' } = await searchParams
+    const today = new Date().toISOString().slice(0, 10)
+    const spend = await api<CostSummary>(`/metrics/cost?start_date=${daysBefore(today, Number(days))}&end_date=${today}`)
+    const invoices = Object.values(spend.invoices_by_status).reduce((a, b) => a + (b ?? 0), 0)
+    const total = Number(spend.total_cost_usd)
 
     return (
         <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Cost Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Model spend</h1>
+            <p className="text-gray-500 mb-6">
+                {day(spend.start_date)} to {day(spend.end_date)}, UTC. Each call is recorded at what it cost when it was made,
+                including reads of PDFs that were then refused.
+            </p>
+            <Tabs current={days} tabs={PERIODS.map((d) => ({ value: String(d), label: `${d} days`, href: `/cost?days=${d}` }))} />
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-                <div className="card">
-                    <dt className="text-sm font-medium text-gray-500">Total LLM Cost</dt>
-                    <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.total_cost}</dd>
-                </div>
-                <div className="card">
-                    <dt className="text-sm font-medium text-gray-500">Avg Cost / Invoice</dt>
-                    <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.avg_cost_per_invoice}</dd>
-                </div>
-                <div className="card">
-                    <dt className="text-sm font-medium text-gray-500">Avg Cost / Verified</dt>
-                    <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.avg_cost_per_verified}</dd>
-                </div>
-                <div className="card">
-                    <dt className="text-sm font-medium text-gray-500">Cache Hit Rate</dt>
-                    <dd className="mt-1 text-3xl font-semibold text-green-600">{metrics.cache_hit_rate}%</dd>
-                </div>
-            </div>
+            <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                <Stat title="Spent" value={cost(spend.total_cost_usd)} />
+                <Stat title="Per invoice" value={cost(spend.cost_per_invoice)} note={`${money(Number(spend.cost_per_invoice) * 1000)} per thousand`} />
+                <Stat title="Invoices received" value={invoices} />
+                <Stat title="Spent today" value={cost(spend.spent_today)} note={`of a ${money(spend.daily_cap_usd)} daily cap`} />
+            </dl>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Cost by Model Tier */}
-                <div className="card">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Cost by Model Tier</h2>
-                    <div className="space-y-4">
-                        {metrics.cost_by_tier.map((tier) => (
-                            <div key={tier.tier}>
-                                <div className="flex justify-between text-sm mb-1">
-                                    <span className="font-medium">{tier.tier}</span>
-                                    <span className="text-gray-500">{tier.cost} ({tier.calls} calls)</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className="bg-primary-600 h-2 rounded-full"
-                                        style={{ width: `${tier.percentage}%` }}
-                                    />
-                                </div>
-                            </div>
+            <div className="card p-0 overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            {['Model', 'Calls', 'Tokens in', 'Tokens out', 'Cost', 'Share'].map((h, i) => (
+                                <th key={h} className={`px-6 py-3 text-xs font-medium text-gray-500 uppercase ${i ? 'text-right' : 'text-left'}`}>{h}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-sm">
+                        {spend.by_model.map((m) => (
+                            <tr key={m.model_id ?? 'unknown'}>
+                                <td className="px-6 py-3 font-medium text-gray-900">{m.model_id ?? 'unknown'}</td>
+                                <td className="px-6 py-3 text-right">{m.calls.toLocaleString()}</td>
+                                <td className="px-6 py-3 text-right">{m.input_tokens.toLocaleString()}</td>
+                                <td className="px-6 py-3 text-right">{m.output_tokens.toLocaleString()}</td>
+                                <td className="px-6 py-3 text-right font-medium">{cost(m.cost_usd)}</td>
+                                <td className="px-6 py-3 text-right">{total ? Math.round((Number(m.cost_usd) / total) * 100) : 0}%</td>
+                            </tr>
                         ))}
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-500">
-                        <p>Tier A: $0.0001/1K tokens • Tier B: $0.001/1K • Tier C: $0.01/1K</p>
-                    </div>
-                </div>
-
-                {/* Cost by Exception Type */}
-                <div className="card">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Cost by Exception Type</h2>
-                    <div className="overflow-hidden">
-                        <table className="min-w-full">
-                            <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="text-left text-xs font-medium text-gray-500 uppercase py-2">Category</th>
-                                    <th className="text-right text-xs font-medium text-gray-500 uppercase py-2">Count</th>
-                                    <th className="text-right text-xs font-medium text-gray-500 uppercase py-2">Cost</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {metrics.cost_by_exception.map((exc) => (
-                                    <tr key={exc.category} className="border-b border-gray-100">
-                                        <td className="py-3 text-sm text-gray-900">{exc.category}</td>
-                                        <td className="py-3 text-sm text-gray-500 text-right">{exc.count}</td>
-                                        <td className="py-3 text-sm font-medium text-gray-900 text-right">{exc.cost}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Efficiency Metrics */}
-                <div className="card lg:col-span-2">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Efficiency Metrics</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
-                            <div className="text-2xl font-bold text-green-600">{metrics.touchless_rate}%</div>
-                            <div className="text-sm text-gray-500">Touchless Rate</div>
-                        </div>
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
-                            <div className="text-2xl font-bold text-blue-600">{metrics.cache_hit_rate}%</div>
-                            <div className="text-sm text-gray-500">Cache Hit Rate</div>
-                        </div>
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
-                            <div className="text-2xl font-bold text-gray-900">10</div>
-                            <div className="text-sm text-gray-500">Total Invoices</div>
-                        </div>
-                        <div className="text-center p-4 bg-gray-50 rounded-lg">
-                            <div className="text-2xl font-bold text-orange-600">4</div>
-                            <div className="text-sm text-gray-500">Exceptions</div>
-                        </div>
-                    </div>
-                </div>
+                        {spend.by_model.length === 0 && (
+                            <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No model calls in this period.</td></tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
         </div>
     )

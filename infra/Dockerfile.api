@@ -16,7 +16,6 @@ RUN pip install --no-cache-dir -e .
 COPY apps/api ./apps/api
 COPY fixtures ./fixtures
 COPY scripts ./scripts
-COPY migrations ./migrations
 
 # Create non-root user
 RUN useradd -m appuser && chown -R appuser:appuser /app
