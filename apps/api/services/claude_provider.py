@@ -1,5 +1,6 @@
 """
-Claude as the reviewing model, through the `claude` command and your own login.
+Claude, through the `claude` command and your own login: to review invoices,
+and to read invoice PDFs.
 
 Calling the CLI rather than the API lets a Claude subscription pay for the
 reviews, with no API key to manage. Each call is stripped back to a plain
@@ -9,6 +10,7 @@ prices, which is what the cost figures use.
 """
 
 import asyncio
+import base64
 import json
 import time
 from decimal import Decimal
@@ -53,19 +55,38 @@ class ClaudeCLI(LLMProvider):
         max_tokens: int = 1000,
         response_schema: Optional[Type[BaseModel]] = None,
     ) -> LLMResponse:
-        args = [
+        return await self._call(self._args("json", system_prompt), prompt, streamed=False)
+
+    async def read(self, document: bytes, instruction: str) -> LLMResponse:
+        """The model's reply to an instruction about a PDF, which it is given
+        whole (text and page images) rather than as text pulled out of it."""
+        message = {"type": "user", "message": {"role": "user", "content": [
+            {"type": "document",
+             "source": {"type": "base64", "media_type": "application/pdf",
+                        "data": base64.b64encode(document).decode()}},
+            {"type": "text", "text": instruction},
+        ]}}
+        # A file can only be attached by streaming the message in, and the CLI
+        # then only streams its reply out.
+        args = self._args("stream-json", None) + ["--input-format", "stream-json", "--verbose"]
+        return await self._call(args, json.dumps(message) + "\n", streamed=True)
+
+    def _args(self, output_format: str, system_prompt: Optional[str]) -> List[str]:
+        return [
             "claude", "-p",
             "--model", self.model,
-            "--output-format", "json",
+            "--output-format", output_format,
             "--tools", "",
             "--safe-mode",
             "--strict-mcp-config",
             "--no-session-persistence",
             "--system-prompt", system_prompt or SYSTEM_PROMPT,
         ]
+
+    async def _call(self, args: List[str], stdin: str, streamed: bool) -> LLMResponse:
         started = time.monotonic()
         try:
-            code, stdout, stderr = await self.run(args, prompt)
+            code, stdout, stderr = await self.run(args, stdin)
         except FileNotFoundError as error:
             raise ClaudeCLIError("the claude command is not installed here (set REVIEW_WITH_MODELS=false "
                                  "to process invoices without models)") from error
@@ -73,7 +94,13 @@ class ClaudeCLI(LLMProvider):
             raise ClaudeCLIError(f"no reply within {TIMEOUT_SECONDS} seconds") from error
         if code != 0:
             raise ClaudeCLIError((stderr or stdout).strip())
-        reply = json.loads(stdout)
+        if streamed:
+            events = [json.loads(line) for line in stdout.splitlines() if line.strip()]
+            reply = next((e for e in reversed(events) if e.get("type") == "result"), None)
+            if reply is None:
+                raise ClaudeCLIError(f"no result in the reply: {stdout[-300:]!r}")
+        else:
+            reply = json.loads(stdout)
         if reply.get("is_error"):
             raise ClaudeCLIError(reply.get("result", "unknown error"))
         usage = reply.get("usage", {})

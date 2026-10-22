@@ -3,17 +3,16 @@ Invoice ingestion routes.
 """
 
 import hashlib
-import json
-from datetime import datetime
-from uuid import UUID
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from apps.api.dependencies import get_db, get_current_user, TenantContext, get_tenant_context
-from apps.api.models.invoice import Invoice, InvoiceStatus
-from apps.api.schemas.auth import TokenPayload
+from apps.api.config import settings
+from apps.api.dependencies import TenantContext, get_tenant_context
 from apps.api.schemas.invoice import InvoiceCreate, InvoiceResponse
+from apps.api.services import extraction, intake
+from apps.api.services.claude_provider import ClaudeCLI, ClaudeCLIError
+
 
 router = APIRouter()
 
@@ -23,52 +22,46 @@ async def ingest_invoice(
     request: InvoiceCreate,
     ctx: TenantContext = Depends(get_tenant_context),
 ):
-    """
-    Ingest a new invoice for processing.
-    
-    Accepts either raw document content or canonical data directly.
-    """
-    # Compute document hash
-    if request.document_content:
-        content = request.document_content
-    elif request.canonical_data:
-        content = json.dumps(request.canonical_data.model_dump(), sort_keys=True, default=str)
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Either document_content or canonical_data is required",
-        )
-    
-    document_hash = hashlib.sha256(content.encode()).hexdigest()
-    
-    # Create invoice
-    invoice = Invoice(
-        tenant_id=ctx.tenant_id,
-        document_content=request.document_content,
-        document_hash=document_hash,
-        document_type=request.document_type,
-        original_filename=request.original_filename,
-        status=InvoiceStatus.PENDING,
-    )
-    
-    # If canonical data provided, populate fields directly
-    if request.canonical_data:
-        cd = request.canonical_data
-        invoice.invoice_number = cd.invoice_number
-        invoice.invoice_date = cd.invoice_date
-        invoice.due_date = cd.due_date
-        invoice.vendor_id = cd.vendor_id
-        invoice.vendor_name = cd.vendor_name
-        invoice.po_number = cd.po_number
-        invoice.currency = cd.currency
-        invoice.subtotal = cd.subtotal
-        invoice.tax_amount = cd.tax_amount
-        invoice.total_amount = cd.total_amount
-        invoice.line_items = [item.model_dump(mode="json") for item in cd.line_items]
-        invoice.extracted_data = cd.review_details()
-    
+    """Ingest an invoice given as data."""
+    if not request.canonical_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="canonical_data is required; send a PDF to /ingest/invoice-pdf")
+    data = request.canonical_data
+    document_hash = (hashlib.sha256(request.document_content.encode()).hexdigest() if request.document_content
+                     else intake.hash_of_data(data))
+    invoice = intake.new_invoice(ctx.tenant_id, data, document_hash, request.document_type,
+                                 request.original_filename, request.document_content)
     ctx.db.add(invoice)
     await ctx.db.commit()
     await ctx.db.refresh(invoice)
-    
+    return InvoiceResponse.model_validate(invoice)
+
+
+@router.post("/invoice-pdf", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED,
+             openapi_extra={"requestBody": {"content": {"application/pdf": {"schema": {"type": "string",
+                                                                                     "format": "binary"}}}}})
+async def ingest_invoice_pdf(
+    request: Request,
+    filename: Optional[str] = None,
+    ctx: TenantContext = Depends(get_tenant_context),
+):
+    """Ingest an invoice PDF, sent as the request body: Claude reads it into
+    the same invoice data as /ingest/invoice takes."""
+    if not settings.review_with_models:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail="reading PDFs needs a model (REVIEW_WITH_MODELS is off)")
+    try:
+        invoice = await intake.ingest_pdf(ctx.db, ctx.tenant_id, await request.body(), ClaudeCLI(intake.READER), filename)
+    except intake.NotAcceptable as error:
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(error))
+    except (extraction.UnreadableInvoice, intake.UnknownVendor) as error:
+        await ctx.db.commit()  # the model calls were made, and are paid for
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error))
+    except intake.SpendCapReached as error:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(error))
+    except ClaudeCLIError as error:
+        await ctx.db.commit()
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"the model could not be reached: {error}")
+    await ctx.db.commit()
+    await ctx.db.refresh(invoice)
     return InvoiceResponse.model_validate(invoice)

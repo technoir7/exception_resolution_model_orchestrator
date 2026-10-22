@@ -1,5 +1,6 @@
 """Calling Claude through the `claude` command, and what each call cost."""
 
+import base64
 import json
 from decimal import Decimal
 
@@ -66,3 +67,42 @@ async def test_a_missing_claude_command_is_a_failed_call():
         raise FileNotFoundError("claude")
     with pytest.raises(ClaudeCLIError, match="not installed"):
         await ClaudeCLI("haiku", run=missing).complete("x")
+
+
+def streamed(result="{}", cost=0.002, is_error=False):
+    """What the CLI prints when a message is streamed in: events, then the result."""
+    return "\n".join([json.dumps({"type": "system", "subtype": "init"}),
+                      json.dumps({"type": "assistant", "message": {}}),
+                      json.dumps({"type": "result", **json.loads(reply(result, cost, is_error))})]) + "\n"
+
+
+class TestReadingADocument:
+    async def test_sends_the_pdf_itself_with_the_instruction(self):
+        run = FakeRun(streamed('{"invoice_number": "INV-1"}'))
+        await ClaudeCLI("haiku", run=run).read(b"%PDF-1.4 tiny", "Copy this invoice.")
+        [(args, stdin)] = run.calls
+        message = json.loads(stdin)
+        document, instruction = message["message"]["content"]
+        assert document["type"] == "document"
+        assert document["source"] == {"type": "base64", "media_type": "application/pdf",
+                                      "data": base64.b64encode(b"%PDF-1.4 tiny").decode()}
+        assert instruction == {"type": "text", "text": "Copy this invoice."}
+
+    async def test_with_no_tools_and_no_saved_session(self):
+        run = FakeRun(streamed())
+        await ClaudeCLI("haiku", run=run).read(b"%PDF-", "x")
+        [(args, _)] = run.calls
+        assert args[args.index("--tools") + 1] == ""
+        assert args[args.index("--input-format") + 1] == "stream-json"
+        assert "--no-session-persistence" in args and "--strict-mcp-config" in args
+
+    async def test_returns_the_reply_and_what_it_cost(self):
+        run = FakeRun(streamed('{"invoice_number": "INV-1"}', cost=0.0021))
+        response = await ClaudeCLI("haiku", run=run).read(b"%PDF-", "x")
+        assert response.content == '{"invoice_number": "INV-1"}'
+        assert response.cost_usd == Decimal("0.0021")
+        assert response.model_id == "claude-haiku-5-5"
+
+    async def test_raises_on_an_error_reply(self):
+        with pytest.raises(ClaudeCLIError):
+            await ClaudeCLI("haiku", run=FakeRun(streamed("overloaded", is_error=True))).read(b"%PDF-", "x")
