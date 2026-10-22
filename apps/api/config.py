@@ -66,6 +66,18 @@ class Settings(BaseSettings):
         alias="ROUTER_HIGH_RISK_AMOUNT"
     )
     
+    # Review by models (apps/api/services/review.py)
+    review_with_models: bool = Field(
+        default=True,
+        description="Have Claude review invoices; off, every flagged invoice goes to a person",
+        alias="REVIEW_WITH_MODELS",
+    )
+    review_scope: str = Field(
+        default="flagged",
+        description="'flagged': models read the invoices the rules flag; 'everything': every invoice",
+        alias="REVIEW_SCOPE",
+    )
+
     # LLM Router Policy - Cost caps
     router_tenant_daily_cap: Decimal = Field(
         default=Decimal("100.00"),

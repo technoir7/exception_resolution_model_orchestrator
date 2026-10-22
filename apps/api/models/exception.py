@@ -26,6 +26,8 @@ class ExceptionCategory(str, Enum):
     LLM_VALIDATION_FAILED = "llm_validation_failed"
     MISSING_FIELDS = "missing_fields"
     CURRENCY_MISMATCH = "currency_mismatch"
+    # Payment asked to an account other than the one on file: a common fraud.
+    BANK_DETAILS = "bank_details"
     OTHER = "other"
 
 
@@ -64,6 +66,7 @@ EXCEPTION_SLA_HOURS = {
     ExceptionCategory.LLM_VALIDATION_FAILED: 4,
     ExceptionCategory.MISSING_FIELDS: 24,
     ExceptionCategory.CURRENCY_MISMATCH: 8,
+    ExceptionCategory.BANK_DETAILS: 4,
     ExceptionCategory.OTHER: 48,
 }
 
@@ -78,6 +81,7 @@ EXCEPTION_OWNER_ROLE = {
     ExceptionCategory.LLM_VALIDATION_FAILED: OwnerRole.CONTROLLER,
     ExceptionCategory.MISSING_FIELDS: OwnerRole.BPO_OPERATOR,
     ExceptionCategory.CURRENCY_MISMATCH: OwnerRole.AP_MANAGER,
+    ExceptionCategory.BANK_DETAILS: OwnerRole.CONTROLLER,
     ExceptionCategory.OTHER: OwnerRole.AP_MANAGER,
 }
 

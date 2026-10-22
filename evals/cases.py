@@ -70,7 +70,7 @@ REASONS = {
     "overbilled_quantity": "bills more than was received",
     "duplicate": "repeats an invoice already paid",
     "duplicate_late": "repeats an invoice already paid",
-    "freight_not_allowed": "freight the PO does not allow",
+    "freight_not_allowed": "freight the PO does not allow, or more than its cap",
     "tax_wrong": "sales tax not at the PO's rate",
     "bank_change": "asks for payment to an account not on file",
     "vendor_mismatch": "billed by a vendor other than the PO's",

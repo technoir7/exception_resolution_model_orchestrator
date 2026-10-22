@@ -9,7 +9,6 @@ from apps.api.models.pipeline import InvoicePipelineRun
 from apps.api.models.exception import ExceptionCase
 from apps.api.models.audit import AuditEvent
 from apps.api.models.cost import CostEvent
-from apps.api.models.cache import SemanticCache
 
 __all__ = [
     "Base",
@@ -22,5 +21,4 @@ __all__ = [
     "ExceptionCase",
     "AuditEvent",
     "CostEvent",
-    "SemanticCache",
 ]

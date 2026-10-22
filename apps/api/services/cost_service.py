@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 
 import structlog
-from sqlalchemy import select, func, and_
+from sqlalchemy import Integer, select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.models.cost import CostEvent, CostEventType, ModelTier
@@ -43,14 +43,16 @@ class CostService:
         was_cache_hit: bool = False,
         cache_key: Optional[str] = None,
         batch_id: Optional[UUID] = None,
+        cost_usd: Optional[Decimal] = None,
     ) -> CostEvent:
-        """Record an LLM call cost event."""
+        """Record an LLM call cost event: at `cost_usd` where the provider
+        reported what the call cost, else at the tier's configured rate."""
         total_tokens = input_tokens + output_tokens
         cost_per_1k = self.tier_costs.get(model_tier, Decimal("0.001"))
         
         if was_cache_hit:
             cost_usd = Decimal("0")
-        else:
+        elif cost_usd is None:
             cost_usd = (Decimal(total_tokens) / 1000) * cost_per_1k
         
         if batch_id:

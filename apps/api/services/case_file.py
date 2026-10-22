@@ -36,9 +36,11 @@ class CaseFile:
 
 
 async def case_file_for(
-    db: AsyncSession, tenant_id: UUID, invoice: Invoice, today: Optional[date] = None
+    db: AsyncSession, tenant_id: UUID, invoice: Invoice, today: Optional[date] = None,
+    flags: Optional[List[str]] = None,
 ) -> CaseFile:
-    """Several queries: the flags, the PO, receipt and vendor, and the history."""
+    """Several queries: the PO, receipt and vendor, the history, and - unless
+    the caller already has them - the flags, which re-run the rules."""
     async def one(model, *conditions):
         result = await db.execute(select(model).where(and_(model.tenant_id == tenant_id, *conditions)))
         return result.scalars().first()
@@ -61,5 +63,6 @@ async def case_file_for(
         )
         recent = list(result.scalars().all())
 
-    flags = await flags_for(db, tenant_id, invoice, today=today)
+    if flags is None:
+        flags = await flags_for(db, tenant_id, invoice, today=today)
     return CaseFile(invoice=invoice, po=po, receipt=receipt, vendor=vendor, recent=recent, flags=flags)
