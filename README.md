@@ -8,36 +8,42 @@ recorded at what it cost.
 
 ## Result
 
-On a benchmark of 200 invoices with known right answers
-([method and data](evals/README.md)):
+Measured on 600 invoices with known right answers, in three rounds of 200,
+each planned in writing before any model saw it ([method and data](evals/README.md)).
+The hardest round, with errors the rules cannot see:
 
 | How invoices are processed | Wrong payments | Sent to a person | Of which payable | Model cost per invoice |
 |---|---:|---:|---:|---:|
-| Rules only | 18 ($56,605) | 130 | 66 | $0 |
-| Haiku reads the invoices the rules flag | 18 ($56,605) | 64 | 0 | $0.0004 |
-| **Haiku reads every invoice** | **0** | **82** | **0** | **$0.0006** |
-| Opus reads every invoice | 0 | 82 | 0 | $0.0181 |
-| Haiku reads every invoice, Opus checks large or unsure pays | 0 | 82 | 0 | $0.0034 |
+| Rules only | 58 ($162,303) | 69 | 47 | $0 |
+| Haiku reads the invoices the rules flag | 58 ($162,303) | 23 | 1 | $0.0002 |
+| **Haiku reads every invoice** | **0** | **82** | **2** | **$0.0006** |
+| Sonnet reads every invoice | 0 | 80 | 0 | $0.0093 |
+| Opus reads every invoice | 0 | 80 | 0 | $0.0188 |
 
 - **What the model reads mattered more than which model reads it.** The rules
-  pass invoices that ask for payment to a new bank account, and duplicates
-  resubmitted weeks later. A model that reads only what the rules flag never
-  sees them; one that reads every invoice caught all 18.
-- **The cheapest model was enough.** Haiku, Sonnet and Opus decided every
-  invoice they read correctly, with the right reason for every hold, so Haiku
-  did Opus's work for about 1/30 of the cost: $0.58 per thousand invoices.
-  Asking Opus for a second opinion never changed a decision, so it is off by
-  default.
-- **Against the rules alone, nothing payable waited for a person.** The rules
-  flag partial deliveries, sales tax on a pre-tax PO, freight within its cap
-  and weekly service bills as exceptions; the models cleared all 66.
+  pass a line whose amount is not its quantity times its price, one unit
+  billed beyond what arrived, a price under 1% above the PO, a bank account
+  changed only on the invoice, and a paid invoice resubmitted weeks later in
+  other words. A model that reads only what the rules flag never sees them;
+  each of Haiku, Sonnet and Opus, reading every invoice, caught all of them.
+- **The cheapest model paid nothing wrongly.** Haiku's only mistakes were two
+  invoices it held that should have been paid (one a second shipment it took
+  for a duplicate), against none for Sonnet and Opus, at 1/15 and 1/30 of
+  their cost: $0.62 per thousand invoices. Asked to check 93 of Haiku's pays
+  (large or less confident ones) across the three rounds, Opus changed none,
+  so that check is off by default.
+- **Against the rules alone, payable invoices stopped waiting for a person.**
+  The rules flag partial deliveries, sales tax on a pre-tax PO, freight within
+  its cap and invoices worded differently from the PO; 47 payable invoices
+  went to a person under the rules, 2 under Haiku.
 
-The invoices are synthetic, generated with their answers fixed by
-construction, and an independent reviewer checked a sample of the answers.
-The documents are clean structured data with one problem per invoice, so the
-benchmark is at its ceiling for all three models: it shows the cheap model is
-enough for documents like these, not where it would start to fail. Invoices
-read from PDFs, with several problems at once, would be harder.
+The two easier rounds came out the same, with every model correct on every
+invoice it read. The invoices are synthetic, built with their answers fixed,
+and independent reviewers checked samples of the answers (all 164 they
+checked were right). The documents are clean structured data with one
+problem per invoice, so these results show the cheap model is enough for
+documents like these; invoices read from PDFs, or with several problems at
+once, would be harder.
 
 Until this measurement the model was a stand-in that returned canned answers,
 and the cost figures were estimates; both are now real.

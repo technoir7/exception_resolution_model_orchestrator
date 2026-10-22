@@ -4,12 +4,11 @@ Known gaps, roughly in order of what would matter most to a real deployment.
 
 ## Harder benchmark cases
 
-The benchmark (`evals/`) is at its ceiling for Haiku, Sonnet and Opus alike,
-so it cannot show where the cheaper model would start to fail. Next: invoices
-with several problems at once, near-misses (a quantity one unit over what was
-received, tax off by a rounding cent), documents read from PDFs, and the clues
-round 2's audit still found (vendor notes and renumbering that only appear on
-duplicates) removed.
+Round 3 added errors the rules cannot see and look-alike pairs, and Haiku
+still paid nothing wrongly, so the benchmark has not yet found where it fails.
+Next: invoices with several problems at once, documents read from PDFs, and
+holds escalated to a stronger model when the cheap one is unsure (Haiku's one
+unsure hold in round 3 would have gone to Opus).
 
 ## Reading invoice PDFs
 

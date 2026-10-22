@@ -234,3 +234,41 @@ whose documents do not settle its label is reported and dropped.
 Regenerating round 2's cases with the generator as it now stands gives the
 same cases, except that the stated reason for disallowed freight now also
 mentions the cap; decisions are unchanged.
+
+### Round 3 results
+
+The label audit agreed with all 65 labels it checked (40 random, and all 25
+cases of the three hidden-error kinds), so no case was dropped. It noted that
+the smallest errors are tiny (one extra hex bolt, $0.45) and that the policy,
+which has no tolerance, makes them holds.
+
+| Arm | Wrong payments | Paid wrongly | To a person | Needless reviews | Model cost per invoice |
+|---|---:|---:|---:|---:|---:|
+| rules only | 58 | $162,302.63 | 69 | 47 | $0 |
+| haiku on flagged | 58 | $162,302.63 | 23 | 1 | $0.00024 |
+| sonnet on flagged | 58 | $162,302.63 | 22 | 0 | $0.00360 |
+| opus on flagged | 58 | $162,302.63 | 22 | 0 | $0.00694 |
+| routed on flagged | 58 | $162,302.63 | 23 | 1 | $0.00180 |
+| haiku on everything | 0 | $0 | 82 | 2 | $0.00062 |
+| sonnet on everything | 0 | $0 | 80 | 0 | $0.00929 |
+| opus on everything | 0 | $0 | 80 | 0 | $0.01878 |
+| routed on everything | 0 | $0 | 82 | 2 | $0.00439 |
+
+1. Every model caught every invoice to hold, the hidden errors included, and
+   gave a sensible reason for each. The first difference between models: Haiku
+   held two invoices that should have been paid. One was the second of two
+   shipments, both received, which it took for a duplicate of the first, at
+   0.95 confidence. The other was a clean invoice billing the same item and
+   quantity as an unrelated earlier invoice on another PO, a coincidence of
+   the generated history, which it sent to a person at 0.6 confidence. Sonnet
+   and Opus made no mistake.
+2. Routing escalates only pays, so it could not fix Haiku's two holds; it
+   cost seven times Haiku alone for the same decisions. (Escalating holds
+   below 0.9 confidence would have sent the second to Opus; that rule was not
+   planned and is not measured here.)
+3. Reading only the flagged invoices left 58 wrong payments, $162,302.63:
+   most invoices to hold now pass the rules.
+
+So on the harder cases the cheapest model still paid nothing wrongly, at the
+cost of 2 needless reviews in 120 payable invoices, against none for models
+15 to 30 times its price.

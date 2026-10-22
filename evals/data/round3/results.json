@@ -1,0 +1,506 @@
+{
+ "rules only": {
+  "invoices": 200,
+  "wrong_payments": 58,
+  "wrong_payment_dollars": "162302.63",
+  "wrong_payment_kinds": {
+   "one_over": 12,
+   "math_error": 12,
+   "unverified_bank_change": 10,
+   "small_price_increase": 12,
+   "duplicate_reworded": 12
+  },
+  "to_a_person": 69,
+  "needless_reviews": 47,
+  "model_calls": 0,
+  "model_cost_usd": "0.0000",
+  "model_cost_per_invoice_usd": "0.00000",
+  "by_kind": {
+   "clean": {
+    "paid": 63
+   },
+   "duplicate_reworded": {
+    "paid": 12
+   },
+   "freight_at_cap": {
+    "person": 10
+   },
+   "math_error": {
+    "paid": 12
+   },
+   "one_over": {
+    "paid": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "person": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "person": 12
+   },
+   "reworded_lines": {
+    "person": 15
+   },
+   "small_price_increase": {
+    "paid": 12
+   },
+   "unverified_bank_change": {
+    "paid": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ },
+ "haiku on flagged": {
+  "invoices": 200,
+  "wrong_payments": 58,
+  "wrong_payment_dollars": "162302.63",
+  "wrong_payment_kinds": {
+   "one_over": 12,
+   "math_error": 12,
+   "unverified_bank_change": 10,
+   "small_price_increase": 12,
+   "duplicate_reworded": 12
+  },
+  "to_a_person": 23,
+  "needless_reviews": 1,
+  "model_calls": 69,
+  "model_cost_usd": "0.0483",
+  "model_cost_per_invoice_usd": "0.00024",
+  "by_kind": {
+   "clean": {
+    "paid": 63
+   },
+   "duplicate_reworded": {
+    "paid": 12
+   },
+   "freight_at_cap": {
+    "paid": 10
+   },
+   "math_error": {
+    "paid": 12
+   },
+   "one_over": {
+    "paid": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "paid": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "paid": 11,
+    "person": 1
+   },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "paid": 12
+   },
+   "unverified_bank_change": {
+    "paid": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ },
+ "sonnet on flagged": {
+  "invoices": 200,
+  "wrong_payments": 58,
+  "wrong_payment_dollars": "162302.63",
+  "wrong_payment_kinds": {
+   "one_over": 12,
+   "math_error": 12,
+   "unverified_bank_change": 10,
+   "small_price_increase": 12,
+   "duplicate_reworded": 12
+  },
+  "to_a_person": 22,
+  "needless_reviews": 0,
+  "model_calls": 69,
+  "model_cost_usd": "0.7200",
+  "model_cost_per_invoice_usd": "0.00360",
+  "by_kind": {
+   "clean": {
+    "paid": 63
+   },
+   "duplicate_reworded": {
+    "paid": 12
+   },
+   "freight_at_cap": {
+    "paid": 10
+   },
+   "math_error": {
+    "paid": 12
+   },
+   "one_over": {
+    "paid": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "paid": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "paid": 12
+   },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "paid": 12
+   },
+   "unverified_bank_change": {
+    "paid": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ },
+ "opus on flagged": {
+  "invoices": 200,
+  "wrong_payments": 58,
+  "wrong_payment_dollars": "162302.63",
+  "wrong_payment_kinds": {
+   "one_over": 12,
+   "math_error": 12,
+   "unverified_bank_change": 10,
+   "small_price_increase": 12,
+   "duplicate_reworded": 12
+  },
+  "to_a_person": 22,
+  "needless_reviews": 0,
+  "model_calls": 70,
+  "model_cost_usd": "1.3878",
+  "model_cost_per_invoice_usd": "0.00694",
+  "by_kind": {
+   "clean": {
+    "paid": 63
+   },
+   "duplicate_reworded": {
+    "paid": 12
+   },
+   "freight_at_cap": {
+    "paid": 10
+   },
+   "math_error": {
+    "paid": 12
+   },
+   "one_over": {
+    "paid": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "paid": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "paid": 12
+   },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "paid": 12
+   },
+   "unverified_bank_change": {
+    "paid": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ },
+ "routed on flagged": {
+  "invoices": 200,
+  "wrong_payments": 58,
+  "wrong_payment_dollars": "162302.63",
+  "wrong_payment_kinds": {
+   "one_over": 12,
+   "math_error": 12,
+   "unverified_bank_change": 10,
+   "small_price_increase": 12,
+   "duplicate_reworded": 12
+  },
+  "to_a_person": 23,
+  "needless_reviews": 1,
+  "model_calls": 84,
+  "model_cost_usd": "0.3607",
+  "model_cost_per_invoice_usd": "0.00180",
+  "by_kind": {
+   "clean": {
+    "paid": 63
+   },
+   "duplicate_reworded": {
+    "paid": 12
+   },
+   "freight_at_cap": {
+    "paid": 10
+   },
+   "math_error": {
+    "paid": 12
+   },
+   "one_over": {
+    "paid": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "paid": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "paid": 11,
+    "person": 1
+   },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "paid": 12
+   },
+   "unverified_bank_change": {
+    "paid": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ },
+ "haiku on everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 82,
+  "needless_reviews": 2,
+  "model_calls": 200,
+  "model_cost_usd": "0.1230",
+  "model_cost_per_invoice_usd": "0.00062",
+  "by_kind": {
+   "clean": {
+    "paid": 62,
+    "person": 1
+   },
+   "duplicate_reworded": {
+    "person": 12
+   },
+   "freight_at_cap": {
+    "paid": 10
+   },
+   "math_error": {
+    "person": 12
+   },
+   "one_over": {
+    "person": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "paid": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "paid": 11,
+    "person": 1
+   },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "person": 12
+   },
+   "unverified_bank_change": {
+    "person": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ },
+ "sonnet on everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 80,
+  "needless_reviews": 0,
+  "model_calls": 200,
+  "model_cost_usd": "1.8577",
+  "model_cost_per_invoice_usd": "0.00929",
+  "by_kind": {
+   "clean": {
+    "paid": 63
+   },
+   "duplicate_reworded": {
+    "person": 12
+   },
+   "freight_at_cap": {
+    "paid": 10
+   },
+   "math_error": {
+    "person": 12
+   },
+   "one_over": {
+    "person": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "paid": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "paid": 12
+   },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "person": 12
+   },
+   "unverified_bank_change": {
+    "person": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ },
+ "opus on everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 80,
+  "needless_reviews": 0,
+  "model_calls": 201,
+  "model_cost_usd": "3.7567",
+  "model_cost_per_invoice_usd": "0.01878",
+  "by_kind": {
+   "clean": {
+    "paid": 63
+   },
+   "duplicate_reworded": {
+    "person": 12
+   },
+   "freight_at_cap": {
+    "paid": 10
+   },
+   "math_error": {
+    "person": 12
+   },
+   "one_over": {
+    "person": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "paid": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "paid": 12
+   },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "person": 12
+   },
+   "unverified_bank_change": {
+    "person": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ },
+ "routed on everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 82,
+  "needless_reviews": 2,
+  "model_calls": 238,
+  "model_cost_usd": "0.8786",
+  "model_cost_per_invoice_usd": "0.00439",
+  "by_kind": {
+   "clean": {
+    "paid": 62,
+    "person": 1
+   },
+   "duplicate_reworded": {
+    "person": 12
+   },
+   "freight_at_cap": {
+    "paid": 10
+   },
+   "math_error": {
+    "person": 12
+   },
+   "one_over": {
+    "person": 12
+   },
+   "partial_freight_over_cap": {
+    "person": 10
+   },
+   "partial_tax": {
+    "paid": 10
+   },
+   "repeat_not_received": {
+    "person": 12
+   },
+   "repeat_shipment": {
+    "paid": 11,
+    "person": 1
+   },
+   "reworded_lines": {
+    "paid": 15
+   },
+   "small_price_increase": {
+    "person": 12
+   },
+   "unverified_bank_change": {
+    "person": 10
+   },
+   "verified_bank_change": {
+    "paid": 10
+   }
+  }
+ }
+}
