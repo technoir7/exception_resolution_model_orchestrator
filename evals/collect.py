@@ -2,6 +2,9 @@
 
     python -m evals.collect --round 1 --model haiku [--limit 10] [--seed 0]
 
+For a reading round (see `evals.reading`), the prompts are built from the
+invoices as read from their PDFs, so the readings must be recorded first.
+
 Every invoice goes to every model, flagged or not, so that any way of
 combining them (rules first, a cheap model first, the strongest model on
 everything) can be scored afterwards from the same answers, without a model
@@ -24,10 +27,9 @@ from apps.api.services import review
 from apps.api.services.case_file import case_file_for
 from apps.api.services.claude_provider import ClaudeCLI, ClaudeCLIError
 from evals import cases as case_set
-from evals import seed
+from evals import reading, seed
 
 DATA = Path(__file__).parent / "data"
-TENANT = __import__("uuid").UUID("00000000-0000-0000-0000-0000000000e1")
 ATTEMPTS = 2
 CONCURRENCY = 4
 
@@ -43,10 +45,10 @@ async def prompts(cases):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     async with async_sessionmaker(engine, expire_on_commit=False)() as db:
-        invoices = await seed.load(db, TENANT, cases)
+        invoices = await seed.load(db, seed.TENANT, cases)
         out = {}
         for case in cases:
-            file = await case_file_for(db, TENANT, invoices[case["id"]], today=case_set.AS_OF)
+            file = await case_file_for(db, seed.TENANT, invoices[case["id"]], today=case_set.AS_OF)
             out[case["id"]] = {"prompt": review.prompt(file), "flags": file.flags,
                                "amount": str(file.invoice.total_amount)}
     await engine.dispose()
@@ -79,18 +81,23 @@ async def ask(model: str, case_id: str, text: str) -> dict:
 async def main(number: int, model: str, seed_value: int, limit):
     folder = round_dir(number)
     folder.mkdir(parents=True, exist_ok=True)
-    cases = case_set.generate(seed=seed_value, counts=case_set.counts_for(number))[:limit]
+    if number in reading.ROUNDS:
+        cases = reading.printed_cases(number)[:limit]
+        built = await reading.prompts(cases, reading.recorded(number))
+    else:
+        cases = case_set.generate(seed=seed_value, counts=case_set.counts_for(number))[:limit]
+        built = await prompts(cases)
     cases_path = folder / "cases.jsonl"
     if not cases_path.exists():
         cases_path.write_text("".join(json.dumps(c) + "\n" for c in cases))
-    built = await prompts(cases)
     prompts_path = folder / "prompts.jsonl"
     if not prompts_path.exists():
         prompts_path.write_text("".join(json.dumps({"id": i, **p}) + "\n" for i, p in built.items()))
 
     out = folder / f"answers-{model}.jsonl"
     done = {json.loads(line)["id"] for line in out.read_text().splitlines()} if out.exists() else set()
-    todo = [c["id"] for c in cases if c["id"] not in done]
+    # An invoice refused at intake goes to a person without a review.
+    todo = [c["id"] for c in cases if c["id"] not in done and "prompt" in built[c["id"]]]
     gate = asyncio.Semaphore(CONCURRENCY)
 
     async def one(case_id):

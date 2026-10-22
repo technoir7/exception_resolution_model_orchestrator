@@ -1,5 +1,7 @@
 """How each way of processing invoices is scored from the models' answers."""
 
+from decimal import Decimal
+
 from evals import score
 
 
@@ -67,3 +69,23 @@ def test_a_wrong_payment_is_paying_what_should_be_held():
     assert summary["wrong_payment_dollars"] == "1000.00"
     assert summary["to_a_person"] == 2
     assert summary["needless_reviews"] == 1        # the partial delivery
+
+
+def test_an_invoice_refused_at_intake_goes_to_a_person_in_every_arm():
+    answers = {"haiku": {"a": answer("pay"), "b": answer("pay"), "c": answer("hold")}}
+    for arm in ("rules only", "haiku on flagged", "haiku on everything"):
+        assert outcomes_read(arm, answers, refused={"d"})["d"].outcome == "person"
+
+
+def test_reading_the_pdf_is_paid_for_in_every_arm():
+    answers = {"haiku": {i: answer("pay", cost="0.001") for i in "abcd"}}
+    read = {i: Decimal("0.002") for i in "abcd"}
+    rules = outcomes_read("rules only", answers, reading=read)
+    assert rules["a"].cost == Decimal("0.002") and rules["a"].calls == 1
+    everything = outcomes_read("haiku on everything", answers, reading=read)
+    assert everything["a"].cost == Decimal("0.003") and everything["a"].calls == 2
+
+
+def outcomes_read(arm, answers, refused=frozenset(), reading=None):
+    reading = {i: (cost, 1) for i, cost in (reading or {}).items()}
+    return {c["id"]: o for c, o in zip(CASES, score.run(arm, CASES, FLAGGED, answers, refused, reading))}

@@ -272,3 +272,56 @@ which has no tolerance, makes them holds.
 So on the harder cases the cheapest model still paid nothing wrongly, at the
 cost of 2 needless reviews in 120 payable invoices, against none for models
 15 to 30 times its price.
+
+## Round 4: invoices read from PDFs
+
+Rounds 1 to 3 gave the app each invoice as data. Real invoices arrive as
+PDFs, so the app now has a reader (`apps/api/services/extraction.py`,
+`intake.py`): Haiku is given the PDF itself, with no tools, and told to copy
+it exactly as printed and to correct nothing, so that a line that does not add
+up reaches the review as printed. The vendor is matched on file by the tax ID
+printed (by name only when none is printed); an invoice whose vendor cannot be
+matched, or that cannot be read in two tries, is refused at intake and goes to
+a person. Round 4 measures what reading costs in wrong payments, needless
+reviews and money. Written before any model has read a round 4 PDF.
+
+The cases are round 3's 200 (seed 3), with the same right answers, which the
+round 3 audit already checked. Only the invoice changes form: each is printed
+as a one-page PDF (`evals/render.py`) in one of three layouts, one per vendor,
+that write dates three ways (February 20, 2026; 02/20/2026; 20-Feb-2026),
+money with or without a dollar sign and thousands separators, columns in
+different orders under different names, and the bank account as "ending
+3572", "****3572" or "xxxx3572". Everything the invoice says is printed, and
+nothing else. The vendor record, PO, receipts and history are the same
+records as in round 3.
+
+The recorded readings are replayed through the app's own intake, then the
+rules and the review run as in round 3. A test checks that an invoice read
+perfectly gives exactly round 3's prompt, so any difference from round 3 comes
+from reading. The arm measured is Haiku reading every PDF and Haiku reviewing
+every invoice, round 3's cheapest arm with no wrong payments; rules only and
+Haiku on flagged invoices are scored from the same answers. Cost per invoice
+now includes reading.
+
+A pilot of 7 PDFs from another case set (seed 100), across all three layouts
+and including a line that does not add up, was read exactly, at about $0.001
+a PDF; the reader's instruction was not changed after it.
+
+Questions:
+
+1. How many invoices are read exactly as printed, and which fields are read
+   wrong? Formatting is not an error (1430.6 for 1430.60, spacing).
+2. Does reading let any invoice be paid wrongly? Round 3's arm paid none. The
+   risk is a reader that tidies the invoice: computes a line's amount instead
+   of copying it, or reads a resubmitted invoice's reworded lines as the
+   PO's wording.
+3. How many payable invoices go to a person? Round 3's arm sent 2. A misread
+   field can send more.
+4. What does an invoice cost to read and review, against round 3's $0.00062?
+
+A wrong payment caused by reading is reported as such, with the field
+misread. The reader's instruction is not changed in response to round 4; a
+change would be measured on a new round with new cases.
+
+Not tested: scanned or photographed invoices, multi-page invoices, and
+invoices from vendors not on file.

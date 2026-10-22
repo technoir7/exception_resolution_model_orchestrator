@@ -13,6 +13,8 @@ from apps.api.models.purchase_order import POStatus, PurchaseOrder
 from apps.api.models.receipt import Receipt
 from apps.api.models.vendor import Vendor
 
+TENANT = UUID("00000000-0000-0000-0000-0000000000e1")
+
 
 def _invoice(tenant_id: UUID, doc: Dict, vendor_id: str, po_number: str, status: InvoiceStatus) -> Invoice:
     key = f"{vendor_id}|{doc['invoice_number']}|{doc['invoice_date']}|{doc['total_amount']}"
@@ -44,29 +46,35 @@ def _vendor(tenant_id: UUID, v: Dict) -> Vendor:
                   remit_updated_on=date.fromisoformat(updated) if updated else None)
 
 
+async def load_records(db: AsyncSession, tenant_id: UUID, case: Dict) -> None:
+    """Everything the case's invoice is checked against: its vendor(s), PO,
+    receipts and the vendor's paid history."""
+    db.add(_vendor(tenant_id, case["vendor"]))
+    if "po_vendor" in case:
+        db.add(_vendor(tenant_id, case["po_vendor"]))
+    po = case["po"]
+    db.add(PurchaseOrder(
+        tenant_id=tenant_id, po_number=po["po_number"], po_date=date.fromisoformat(po["po_date"]),
+        status=POStatus.OPEN, vendor_id=po["vendor_id"], vendor_name=po["vendor_name"], currency="USD",
+        total_amount=Decimal(po["total_amount"]), line_items=po["line_items"], terms=po["terms"],
+    ))
+    for r in [case["receipt"], *case.get("extra_receipts", [])] if case["receipt"] else []:
+        db.add(Receipt(
+            tenant_id=tenant_id, receipt_number=r["receipt_number"],
+            receipt_date=date.fromisoformat(r["receipt_date"]), po_number=r["po_number"],
+            vendor_id=r["vendor_id"], total_amount=Decimal(r["total_amount"]), line_items=r["line_items"],
+        ))
+    for paid in case["history"]:
+        db.add(_invoice(tenant_id, paid, case["invoice"]["vendor_id"], paid["po_number"], InvoiceStatus.APPROVED))
+
+
 async def load(db: AsyncSession, tenant_id: UUID, cases: List[Dict]) -> Dict[str, Invoice]:
-    """Each case's vendor(s), PO, receipt and paid history, then the invoice to
-    decide. Returns the invoices to decide, by case id."""
+    """Each case's records, then the invoice to decide, as given. Returns the
+    invoices to decide, by case id."""
     to_decide = {}
     for case in cases:
-        db.add(_vendor(tenant_id, case["vendor"]))
-        if "po_vendor" in case:
-            db.add(_vendor(tenant_id, case["po_vendor"]))
-        po = case["po"]
-        db.add(PurchaseOrder(
-            tenant_id=tenant_id, po_number=po["po_number"], po_date=date.fromisoformat(po["po_date"]),
-            status=POStatus.OPEN, vendor_id=po["vendor_id"], vendor_name=po["vendor_name"], currency="USD",
-            total_amount=Decimal(po["total_amount"]), line_items=po["line_items"], terms=po["terms"],
-        ))
-        for r in [case["receipt"], *case.get("extra_receipts", [])] if case["receipt"] else []:
-            db.add(Receipt(
-                tenant_id=tenant_id, receipt_number=r["receipt_number"],
-                receipt_date=date.fromisoformat(r["receipt_date"]), po_number=r["po_number"],
-                vendor_id=r["vendor_id"], total_amount=Decimal(r["total_amount"]), line_items=r["line_items"],
-            ))
-        for paid in case["history"]:
-            db.add(_invoice(tenant_id, paid, case["invoice"]["vendor_id"], paid["po_number"], InvoiceStatus.APPROVED))
-        invoice = _invoice(tenant_id, case["invoice"], case["invoice"]["vendor_id"], po["po_number"],
+        await load_records(db, tenant_id, case)
+        invoice = _invoice(tenant_id, case["invoice"], case["invoice"]["vendor_id"], case["po"]["po_number"],
                            InvoiceStatus.PENDING)
         db.add(invoice)
         to_decide[case["id"]] = invoice

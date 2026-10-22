@@ -16,10 +16,11 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from apps.api.services import routing
 from apps.api.services.review import Verdict
+from evals import reading as reading_round
 
 DATA = Path(__file__).parent / "data"
 MODELS = ("haiku", "sonnet", "opus")
@@ -66,18 +67,25 @@ def _routed(case, answers) -> Outcome:
     return Outcome(second.outcome, _cost(first) + second.cost, len(first["attempts"]) + second.calls)
 
 
-def run(arm: str, cases: List[dict], flagged: Dict[str, bool], answers) -> List[Outcome]:
+def _decide(arm: str, case: dict, flagged: Dict[str, bool], answers) -> Outcome:
     if arm == "rules only":
-        return [Outcome("person" if flagged[c["id"]] else "paid", Decimal(0)) for c in cases]
+        return Outcome("person" if flagged[case["id"]] else "paid", Decimal(0))
     how, _, scope = arm.partition(" on ")
+    if scope == "flagged" and not flagged[case["id"]]:
+        return Outcome("paid", Decimal(0))
+    return _routed(case, answers) if how == "routed" else _one(how, case["id"], answers)
+
+
+def run(arm: str, cases: List[dict], flagged: Dict[str, bool], answers, refused=frozenset(),
+        reading: Optional[Dict[str, Tuple[Decimal, int]]] = None) -> List[Outcome]:
+    """Each case's outcome under the arm. In a reading round every arm first
+    pays to read the PDF (`reading`: cost and calls by case), and an invoice
+    refused at intake goes to a person unreviewed."""
     out = []
     for c in cases:
-        if scope == "flagged" and not flagged[c["id"]]:
-            out.append(Outcome("paid", Decimal(0)))
-        elif how == "routed":
-            out.append(_routed(c, answers))
-        else:
-            out.append(_one(how, c["id"], answers))
+        cost, calls = (reading or {}).get(c["id"], (Decimal(0), 0))
+        decided = Outcome("person", Decimal(0)) if c["id"] in refused else _decide(arm, c, flagged, answers)
+        out.append(Outcome(decided.outcome, decided.cost + cost, decided.calls + calls))
     return out
 
 
@@ -110,22 +118,32 @@ def main(number: int):
     cases = [json.loads(l) for l in (folder / "cases.jsonl").read_text().splitlines()]
     prompts = {p["id"]: p for p in map(json.loads, (folder / "prompts.jsonl").read_text().splitlines())}
     flagged = {i: bool(p["flags"]) for i, p in prompts.items()}
+    refused = {i for i, p in prompts.items() if "refused" in p}
+    reading, results = None, {}
+    if number in reading_round.ROUNDS:
+        reads = reading_round.recorded(number)
+        reading = {i: (_cost(r), len(r["attempts"])) for i, r in reads.items()}
+        results["reading"] = {**reading_round.accuracy(cases, reads), "refused_at_intake":
+                              {i: prompts[i]["refused"] for i in sorted(refused)}}
     answers = {}
     for model in MODELS:
         path = folder / f"answers-{model}.jsonl"
         if path.exists():
             answers[model] = {a["id"]: a for a in map(json.loads, path.read_text().splitlines())}
-    results = {}
     for arm in ARMS:
         needed = {routing.FIRST, routing.SECOND} if arm.startswith("routed") else \
             set() if arm == "rules only" else {arm.split(" on ")[0]}
-        if not all(m in answers and len(answers[m]) == len(cases) for m in needed):
+        if not all(m in answers and len(answers[m]) == len(cases) - len(refused) for m in needed):
             continue
-        outcomes = run(arm, cases, flagged, answers)
+        outcomes = run(arm, cases, flagged, answers, refused, reading)
         results[arm] = {**summarise(cases, outcomes), "by_kind": by_kind(cases, outcomes)}
     (folder / "results.json").write_text(json.dumps(results, indent=1))
     print(f"{'arm':24} {'wrong paid':>10} {'$ wrong':>10} {'to person':>10} {'needless':>9} {'$/invoice':>10}")
-    for arm, r in results.items():
+    if "reading" in results:
+        r = results["reading"]
+        print(f"read exactly: {r['read_exactly']} of {r['invoices']}; unreadable {r['unreadable']}; "
+              f"refused at intake {len(r['refused_at_intake'])}; field errors {r['field_errors']}")
+    for arm, r in ((a, r) for a, r in results.items() if a != "reading"):
         print(f"{arm:24} {r['wrong_payments']:>10} {r['wrong_payment_dollars']:>10} {r['to_a_person']:>10} "
               f"{r['needless_reviews']:>9} {r['model_cost_per_invoice_usd']:>10}")
 
