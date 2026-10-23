@@ -378,3 +378,205 @@ $0.0010 without the retries the bug caused.
 So for clean, generated PDFs, reading is not where invoices go wrong; the
 review's judgement on borderline payable invoices is. Scans, photographs and
 multi-page invoices would test the reader harder.
+
+## Round 5: terms that live outside the PO
+
+In rounds 1 to 4 every term that decides an invoice is printed on the PO:
+the freight cap, the tax rate, whether prices are fixed. In practice most of
+them live elsewhere. A PO says "per the Master Supply Agreement", and the
+agreement, its amendments, the AP policy manual and emails agreeing
+exceptions say what may be billed. Round 5 moves the deciding terms into
+that library of documents and asks whether the review needs retrieval (RAG)
+to use them, or whether giving it all of a vendor's documents does as well.
+Written before any model answered round 5's cases.
+
+Changed in the app: a case file can carry the vendor's documents
+(`case_file.py`), and the review shows them after the PO with one more
+paragraph of policy: an amendment applies from its effective date and
+overrides the agreement and earlier amendments, and what was agreed in
+writing by email counts (`review.py`, `DOCUMENTS_POLICY`). Without documents
+the prompt is exactly as before. Retrieval is `apps/api/services/retrieval.py`:
+keyword ranking (BM25), ranking by embedding, and the two fused (reciprocal
+rank fusion). The app does not yet store vendors' documents; this round
+measures whether it should look them up, and how.
+
+### The library
+
+Generated with the cases (`evals/library.py`), with the right answers fixed:
+
+- **A master supply agreement per vendor**: 24 clauses, most of them the
+  boilerplate real agreements carry (confidentiality, insurance, indemnity).
+  Clause 4 says a changed price applies to goods invoiced on or after an
+  amendment's effective date; clause 6 sets freight (prices delivered, or
+  freight at cost up to a cap); clause 7 rules out sales tax.
+- **Amendments, 0 to 4 per vendor**: each dated, each changing one clause;
+  most change nothing an invoice bills (insurance limits, notices, the term,
+  the price of something else).
+- **Emails, 1 to 7 per vendor**: delivery windows, holiday closures, a new
+  account manager, and the expedite offers and replies the rush-fee cases
+  turn on.
+- **One AP policy manual** for the buyer, 28 sections, of which one decides
+  invoices: rush fees are payable only with Purchasing's written approval,
+  for that PO, before shipment.
+
+A vendor's documents with the manual come to about 1,800 words. The PO says
+only "Pricing, freight and all other charges per Master Supply Agreement
+MSA-..., as amended".
+
+### The cases
+
+200 invoices (seed 5), 90 to hold, 45 of which the rules pass:
+
+| Kind | Right answer | Rules flag it | Decided by | Cases |
+|---|---|---|---|---:|
+| clean | pay | no | nothing at issue | 50 |
+| freight within the agreement's cap (the PO is silent) | pay | yes | agreement, clause 6 | 15 |
+| freight where the agreement says prices are delivered | hold | yes | agreement, clause 6 | 15 |
+| a price rise in an amendment in effect on the invoice date | pay | yes | amendment, clause 4 | 15 |
+| a price rise in an amendment not yet in effect | hold | yes | amendment, clause 4 | 15 |
+| the price the latest of two amendments set | pay | yes | latest amendment, clause 4 | 15 |
+| the price an earlier amendment set, since lowered (the PO's price) | hold | no | latest amendment, clause 4 | 15 |
+| a rush fee Purchasing approved in writing | pay | yes | the approval email, the manual | 15 |
+| a rush fee with no written approval | hold | yes | the manual | 15 |
+| control: one unit more than was received | hold | no | receipt, as in round 3 | 15 |
+| control: a unit price above the PO's | hold | no | PO, as in round 3 | 15 |
+
+Unapproved rush fees come four ways: an offer never answered, an offer
+declined, an approval for a different PO, and the vendor saying it was agreed
+by phone. `evals/tests/test_round5.py` checks that each kind's documents
+settle its answer, and the generator records which passages decide each case
+(`deciding`). The labels are audited as in round 3, by a reviewer who has
+seen no answers, before results are read.
+
+### The arms
+
+Haiku reviews every invoice in each arm; only what it is shown of the
+documents changes:
+
+1. **PO only**: today's prompt. The baseline.
+2. **Everything**: all of the vendor's documents and the whole manual.
+3. **Keyword**: for each invoice line, the 3 passages BM25 ranks highest.
+4. **Embeddings**: the same, ranked by a small embedding model.
+5. **Both**: the same, with the two rankings fused.
+
+Retrieval searches the vendor's own documents and the manual, as the app
+would: it knows the vendor from intake. Each line is its own query (what it
+bills, without the invoice number or dates), and the best of each line's
+ranking are taken in turn, so a review is shown about 6 passages.
+
+The embedding model is a static one (model2vec's potion-base-8M, 30 MB, from
+its maker's Hugging Face organisation, in safetensors) that runs on numpy; no
+PyTorch, no vector database, no local LLM.
+
+### Pilot
+
+On another case set (seed 105), with no answer from round 5's:
+
+- **Retrieval, scored without a model.** The obvious query, the whole
+  invoice at once, was scored first; on round 5's own cases too, since that
+  needs no model. It finds little: the vendor's name and PO number, in most
+  of its documents, outweigh a freight line or a rush fee. Querying each
+  line separately was then built on the pilot set alone and fixed before
+  round 5 was scored. Both are reported.
+- **22 invoices in all five arms** (110 Haiku calls). Two faults in the
+  generated documents came out, both fixed before round 5: the manual asked
+  for the vendor's tax ID on the invoice, which the review is not shown, and
+  one review held a payable invoice for it; and clause 4, which says an
+  amendment's price applies to invoices dated from its effective date, was
+  not counted among the passages that decide the price cases, though
+  without it a review can reasonably read an amendment as applying by
+  delivery date. It is counted now, so retrieval is scored on finding it.
+
+### Questions
+
+1. **How often is every deciding passage shown?** For each retriever, and
+   for the one-query baseline.
+2. **Without the documents, what goes wrong?** Wrong payments and needless
+   holds under arm 1, per kind.
+3. **Does showing everything fix it, and at what cost** in tokens and
+   dollars per invoice?
+4. **Does retrieval match arm 2's decisions at lower cost?** Where it
+   doesn't, was a deciding passage not shown, or shown and misread?
+5. **Do the controls stay caught** under arms 2 to 5?
+
+Tokens per invoice are reported for every arm, so the cost of showing
+everything can be projected to larger libraries.
+
+Not tested: scanned contracts, terms that conflict without a clear later
+date, and libraries too large for one vendor's documents to fit in a prompt.
+
+### Round 5 results
+
+The label audit agreed with all 44 labels it checked (40 at random, topped
+up so each kind a document decides had at least 3), so no case was dropped.
+It found no case the documents leave open, and noted what could mislead: the
+pricing clause says prices are "firm for the life of each Purchase Order"
+before it says an amendment's price applies to open POs; in several price
+cases the goods arrived before the amendment took effect and were invoiced
+after; and the automatic checks flag most of the payable cases and pass
+most of the held ones. It also found cosmetic faults in the generator, none
+changing an answer: agreement numbers dated a year off their effective
+dates, a few approval emails dated before their PO, holiday-closure emails
+in spring, an amendment pricing an item of another trade, and vendors in
+different cases sharing a name or email domain.
+
+| Arm | Wrong payments | Paid wrongly | To a person | Needless reviews | Model cost per invoice | Input tokens |
+|---|---:|---:|---:|---:|---:|---:|
+| PO only | 15 | $31,452.12 | 136 | 61 | $0.00055 | 1,699 |
+| everything | 0 | $0 | 91 | 1 | $0.00168 | 6,300 |
+| keyword | 0 | $0 | 106 | 16 | $0.00077 | 2,413 |
+| embeddings | 0 | $0 | 103 | 13 | $0.00077 | 2,360 |
+| both | 0 | $0 | 108 | 18 | $0.00078 | 2,442 |
+
+Wrong outcomes by kind (a wrong payment for a kind to hold, a needless
+review for a kind to pay):
+
+| Kind | PO only | everything | keyword | embeddings | both |
+|---|---:|---:|---:|---:|---:|
+| clean (50) | 1 | 1 | 0 | 1 | 0 |
+| freight within the agreement's cap | 15 | 0 | 5 | 1 | 1 |
+| price rise in an amendment in effect | 15 | 0 | 5 | 4 | 9 |
+| the latest amendment's price | 15 | 0 | 0 | 0 | 1 |
+| rush fee approved in writing | 15 | 0 | 6 | 7 | 7 |
+| every kind to hold | 15 (superseded prices) | 0 | 0 | 0 | 0 |
+
+1. **Retrieval showed every deciding passage for 46 to 57 of the 120
+   cases a document decides** (keyword 46, embeddings 56, both 57), about 6
+   passages a review. It always found the amendments and the freight clause
+   when prices were delivered; what it missed was clause 4, which says how
+   an amendment applies and shares no words with an invoice line, and, for
+   rush fees, the approval email or the manual's section. The obvious query,
+   the whole invoice at once, did worse still: 17 to 32 of 120.
+2. **Without the documents, every superseded price was paid** (15 invoices,
+   $31,452): each bills the PO's price, which a later amendment lowered, so
+   the rules pass it and the PO agrees with it. And every payable invoice
+   whose terms live in the documents was held: 60 of them.
+3. **Showing everything fixed it**: no wrong payment, and one needless
+   review (c112, a clean invoice held over the duplicate check's 120-day
+   window). It cost $0.00168 an invoice, three times PO only, at about
+   6,300 input tokens.
+4. **Retrieval paid nothing wrongly either, at under half the cost of
+   everything, but sent 12 to 17 more payable invoices to a person.** In
+   all but a few of them a deciding passage was not shown: without clause 4,
+   Haiku read an amendment as applying by delivery date; without the
+   freight clause or the approval email, it could not see that the charge
+   was allowed. Its misses held invoices rather than paying them, because
+   the policy says to hold what the documents do not support.
+5. **The controls stayed caught**: one unit over, and a price above the
+   PO with no amendment behind it, were held in every arm.
+
+So, for one vendor's documents (about 1,800 words with the manual), giving
+the review all of them is better than retrieving from them: retrieval saved
+$0.91 per thousand invoices and cost 12 to 17 needless reviews per 200, each
+a person's time. At the cost measured here, about $0.25 per million input
+tokens, showing everything adds about $6 per thousand invoices for each
+10,000 more words of a vendor's documents, so it stays the cheaper choice
+until a vendor's documents run to well beyond what one prompt should hold.
+Retrieval earns its place when they cannot be narrowed to one vendor, or
+grow past that; and then it needs the clauses that say how to read the
+others (here, clause 4) always to be included, which ranking alone does not
+do.
+
+The pilot's answers and prompts are in `data/pilot5-seed105-first/`, and
+the per-line retrieval scores on the pilot set as finally built in
+`data/pilot5-seed105/`.

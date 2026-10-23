@@ -58,6 +58,18 @@ hardest round, with errors the rules cannot see:
   The rules flag partial deliveries, sales tax on a pre-tax PO, freight within
   its cap and invoices worded differently from the PO; 47 payable invoices
   went to a person under the rules, 2 under Haiku.
+- **When the terms live in the vendor's contracts, showing the review all of
+  them beat retrieving from them.** In a fifth round the PO says only "per the
+  Master Supply Agreement, as amended", and the freight terms, price changes
+  and rush-fee approvals are in each vendor's agreement, amendments and
+  emails and the AP policy manual. Shown none of them, Haiku paid all 15
+  invoices billing a price a later amendment had lowered ($31,452) and held
+  60 payable ones. Shown all of a vendor's documents (about 6,300 tokens a
+  prompt), it paid none wrongly and held 1 payable invoice, at $1.68 per
+  thousand. Retrieval (about 6 passages per invoice, by keyword, embeddings
+  or both) also paid none wrongly, at $0.77 per thousand, but held 13 to 18
+  payable invoices, mostly because it did not fetch the clause that says how
+  an amendment applies. At one vendor's scale, retrieval is not worth it.
 
 The two easier rounds came out the same, with every model correct on every
 invoice it read. The invoices are synthetic, built with their answers fixed,
@@ -133,7 +145,7 @@ no Docker and no model calls for the tests.
 
 ```bash
 uv venv && uv pip install -e ".[dev]"
-.venv/bin/python -m pytest apps/api/tests evals/tests      # 411 tests, on SQLite
+.venv/bin/python -m pytest apps/api/tests evals/tests      # 476 tests, on SQLite
 cd apps/web && pnpm install && pnpm test && pnpm build      # the dashboard: Node 22.18+
 ```
 
@@ -144,6 +156,15 @@ The benchmark needs the `claude` command, logged in:
 .venv/bin/python -m evals.score --round 3                   # every arm it can score
 .venv/bin/python -m evals.reading --round 4                 # Haiku reads round 3's invoices as PDFs
 .venv/bin/python -m evals.render --round 4 --out pdfs/      # the PDFs, to look at
+```
+
+Round 5 (terms in the vendor's documents) also needs a 30 MB embedding model,
+`uv pip install -e ".[retrieval]"`:
+
+```bash
+.venv/bin/python -m evals.rag --round 5                     # every arm's prompts; retrieval scored
+.venv/bin/python -m evals.collect --round 5 --model haiku --arm everything
+.venv/bin/python -m evals.score --round 5
 ```
 
 The full app (Postgres, Redis, the API, a worker and a Next.js dashboard) runs
@@ -226,3 +247,5 @@ Interactive docs at `/docs`. The main endpoints:
   resubmissions get past the rules.
 - Logins are demo accounts with a development secret, and roles are not
   enforced: any user can resolve any exception, whichever role it is for.
+- Vendors' agreements, amendments and emails are not yet stored by the app;
+  round 5 measured the review with them, built from generated documents.

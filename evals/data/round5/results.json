@@ -1,0 +1,1985 @@
+{
+ "retrieval": {
+  "per_line": {
+   "embeddings": {
+    "decided_cases": 120,
+    "all_found": 56,
+    "missed": {
+     "c002": [
+      "V0002-msa-4"
+     ],
+     "c003": [
+      "V0003-msa-4"
+     ],
+     "c008": [
+      "V0008-msa-4"
+     ],
+     "c010": [
+      "V0010-msa-4"
+     ],
+     "c011": [
+      "V0011-msa-4"
+     ],
+     "c014": [
+      "V0014-msa-4"
+     ],
+     "c017": [
+      "V0017-msa-4"
+     ],
+     "c020": [
+      "V0020-msa-4"
+     ],
+     "c021": [
+      "V0021-msa-4"
+     ],
+     "c025": [
+      "V0025-msa-4"
+     ],
+     "c028": [
+      "V0028-email-5"
+     ],
+     "c031": [
+      "V0031-msa-4"
+     ],
+     "c032": [
+      "V0032-msa-4"
+     ],
+     "c034": [
+      "V0034-msa-4"
+     ],
+     "c037": [
+      "V0037-msa-4"
+     ],
+     "c041": [
+      "V0041-msa-4"
+     ],
+     "c043": [
+      "V0043-email-5"
+     ],
+     "c044": [
+      "V0044-msa-4"
+     ],
+     "c057": [
+      "V0057-msa-4"
+     ],
+     "c061": [
+      "V0061-msa-4"
+     ],
+     "c062": [
+      "V0062-msa-4"
+     ],
+     "c063": [
+      "V0063-msa-4"
+     ],
+     "c064": [
+      "V0064-msa-4"
+     ],
+     "c065": [
+      "V0065-msa-4"
+     ],
+     "c073": [
+      "V0073-msa-4"
+     ],
+     "c076": [
+      "V0076-msa-4"
+     ],
+     "c079": [
+      "V0079-msa-4"
+     ],
+     "c081": [
+      "V0081-msa-4"
+     ],
+     "c082": [
+      "V0082-msa-4"
+     ],
+     "c083": [
+      "V0083-msa-4"
+     ],
+     "c090": [
+      "V0090-msa-4"
+     ],
+     "c093": [
+      "V0093-email-5"
+     ],
+     "c094": [
+      "V0094-msa-4"
+     ],
+     "c101": [
+      "V0101-msa-4"
+     ],
+     "c106": [
+      "V0106-msa-4"
+     ],
+     "c107": [
+      "V0107-email-6"
+     ],
+     "c110": [
+      "V0110-msa-4"
+     ],
+     "c113": [
+      "V0113-email-4"
+     ],
+     "c115": [
+      "V0115-msa-4"
+     ],
+     "c117": [
+      "V0117-msa-4"
+     ],
+     "c120": [
+      "V0120-msa-4"
+     ],
+     "c122": [
+      "V0122-msa-4"
+     ],
+     "c124": [
+      "V0124-msa-4"
+     ],
+     "c125": [
+      "V0125-msa-4"
+     ],
+     "c130": [
+      "V0130-msa-4"
+     ],
+     "c133": [
+      "V0133-msa-4"
+     ],
+     "c135": [
+      "V0135-msa-4"
+     ],
+     "c138": [
+      "V0138-msa-4"
+     ],
+     "c146": [
+      "V0146-msa-4"
+     ],
+     "c147": [
+      "V0147-msa-4"
+     ],
+     "c150": [
+      "V0150-msa-4"
+     ],
+     "c154": [
+      "V0154-msa-4"
+     ],
+     "c156": [
+      "V0156-msa-4"
+     ],
+     "c166": [
+      "V0166-msa-4"
+     ],
+     "c172": [
+      "V0172-msa-4"
+     ],
+     "c175": [
+      "V0175-msa-4"
+     ],
+     "c179": [
+      "V0179-email-5"
+     ],
+     "c181": [
+      "V0181-msa-4"
+     ],
+     "c182": [
+      "V0182-msa-4"
+     ],
+     "c184": [
+      "V0184-msa-4"
+     ],
+     "c185": [
+      "V0185-msa-4"
+     ],
+     "c191": [
+      "V0191-msa-4"
+     ],
+     "c193": [
+      "V0193-msa-4"
+     ],
+     "c197": [
+      "V0197-msa-4"
+     ]
+    },
+    "passages_shown": 6.5,
+    "by_kind": {
+     "amended_price_in_effect": {
+      "all_found": 1,
+      "cases": 15
+     },
+     "amended_price_not_yet": {
+      "all_found": 1,
+      "cases": 15
+     },
+     "latest_amended_price": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "msa_freight_not_allowed": {
+      "all_found": 15,
+      "cases": 15
+     },
+     "msa_freight_within_cap": {
+      "all_found": 15,
+      "cases": 15
+     },
+     "rush_fee_approved": {
+      "all_found": 9,
+      "cases": 15
+     },
+     "rush_fee_unapproved": {
+      "all_found": 15,
+      "cases": 15
+     },
+     "superseded_price": {
+      "all_found": 0,
+      "cases": 15
+     }
+    }
+   },
+   "hybrid": {
+    "decided_cases": 120,
+    "all_found": 57,
+    "missed": {
+     "c002": [
+      "V0002-msa-4"
+     ],
+     "c003": [
+      "V0003-msa-4"
+     ],
+     "c007": [
+      "V0007-email-5",
+      "policy-7.4"
+     ],
+     "c008": [
+      "V0008-msa-4"
+     ],
+     "c010": [
+      "V0010-msa-4"
+     ],
+     "c011": [
+      "V0011-msa-4"
+     ],
+     "c014": [
+      "V0014-msa-4"
+     ],
+     "c017": [
+      "V0017-msa-4"
+     ],
+     "c020": [
+      "V0020-msa-4"
+     ],
+     "c021": [
+      "V0021-msa-4"
+     ],
+     "c025": [
+      "V0025-msa-4"
+     ],
+     "c031": [
+      "V0031-msa-4"
+     ],
+     "c032": [
+      "V0032-msa-4"
+     ],
+     "c034": [
+      "V0034-msa-4"
+     ],
+     "c041": [
+      "V0041-msa-4"
+     ],
+     "c043": [
+      "V0043-email-5",
+      "policy-7.4"
+     ],
+     "c054": [
+      "V0054-email-4",
+      "policy-7.4"
+     ],
+     "c057": [
+      "V0057-msa-4"
+     ],
+     "c061": [
+      "V0061-msa-4"
+     ],
+     "c062": [
+      "V0062-msa-4"
+     ],
+     "c063": [
+      "V0063-msa-4"
+     ],
+     "c064": [
+      "V0064-msa-4"
+     ],
+     "c065": [
+      "V0065-msa-4"
+     ],
+     "c073": [
+      "V0073-msa-4"
+     ],
+     "c076": [
+      "V0076-msa-4"
+     ],
+     "c081": [
+      "V0081-msa-4"
+     ],
+     "c082": [
+      "V0082-msa-4"
+     ],
+     "c083": [
+      "V0083-msa-4"
+     ],
+     "c089": [
+      "V0089-email-5"
+     ],
+     "c090": [
+      "V0090-msa-4"
+     ],
+     "c094": [
+      "V0094-msa-4"
+     ],
+     "c095": [
+      "V0095-email-5",
+      "policy-7.4"
+     ],
+     "c101": [
+      "V0101-msa-4"
+     ],
+     "c106": [
+      "V0106-msa-4"
+     ],
+     "c110": [
+      "V0110-msa-4"
+     ],
+     "c113": [
+      "V0113-email-4",
+      "policy-7.4"
+     ],
+     "c115": [
+      "V0115-msa-4"
+     ],
+     "c117": [
+      "V0117-msa-4"
+     ],
+     "c120": [
+      "V0120-msa-4"
+     ],
+     "c122": [
+      "V0122-msa-4"
+     ],
+     "c124": [
+      "V0124-msa-4"
+     ],
+     "c125": [
+      "V0125-msa-4"
+     ],
+     "c126": [
+      "policy-7.4"
+     ],
+     "c130": [
+      "V0130-msa-4"
+     ],
+     "c132": [
+      "policy-7.4"
+     ],
+     "c133": [
+      "V0133-msa-4"
+     ],
+     "c135": [
+      "V0135-msa-4"
+     ],
+     "c138": [
+      "V0138-msa-4"
+     ],
+     "c141": [
+      "V0141-msa-4"
+     ],
+     "c146": [
+      "V0146-msa-4"
+     ],
+     "c147": [
+      "V0147-msa-4"
+     ],
+     "c156": [
+      "V0156-msa-4"
+     ],
+     "c166": [
+      "V0166-msa-4"
+     ],
+     "c172": [
+      "V0172-msa-4"
+     ],
+     "c175": [
+      "V0175-msa-4"
+     ],
+     "c181": [
+      "V0181-msa-4"
+     ],
+     "c182": [
+      "V0182-msa-4"
+     ],
+     "c184": [
+      "V0184-msa-4"
+     ],
+     "c185": [
+      "V0185-msa-4"
+     ],
+     "c191": [
+      "V0191-msa-4"
+     ],
+     "c193": [
+      "V0193-msa-4"
+     ],
+     "c197": [
+      "V0197-msa-4"
+     ],
+     "c200": [
+      "policy-7.4"
+     ]
+    },
+    "passages_shown": 6.2,
+    "by_kind": {
+     "amended_price_in_effect": {
+      "all_found": 1,
+      "cases": 15
+     },
+     "amended_price_not_yet": {
+      "all_found": 3,
+      "cases": 15
+     },
+     "latest_amended_price": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "msa_freight_not_allowed": {
+      "all_found": 15,
+      "cases": 15
+     },
+     "msa_freight_within_cap": {
+      "all_found": 15,
+      "cases": 15
+     },
+     "rush_fee_approved": {
+      "all_found": 9,
+      "cases": 15
+     },
+     "rush_fee_unapproved": {
+      "all_found": 12,
+      "cases": 15
+     },
+     "superseded_price": {
+      "all_found": 2,
+      "cases": 15
+     }
+    }
+   },
+   "keyword": {
+    "decided_cases": 120,
+    "all_found": 46,
+    "missed": {
+     "c002": [
+      "V0002-msa-4"
+     ],
+     "c003": [
+      "V0003-msa-4"
+     ],
+     "c007": [
+      "V0007-email-5",
+      "policy-7.4"
+     ],
+     "c008": [
+      "V0008-msa-4"
+     ],
+     "c010": [
+      "V0010-msa-4"
+     ],
+     "c011": [
+      "V0011-msa-4"
+     ],
+     "c014": [
+      "V0014-msa-4"
+     ],
+     "c017": [
+      "V0017-msa-4"
+     ],
+     "c020": [
+      "V0020-msa-4"
+     ],
+     "c021": [
+      "V0021-msa-4"
+     ],
+     "c025": [
+      "V0025-msa-4"
+     ],
+     "c027": [
+      "V0027-msa-6"
+     ],
+     "c031": [
+      "V0031-msa-4"
+     ],
+     "c032": [
+      "V0032-msa-4"
+     ],
+     "c034": [
+      "V0034-msa-4"
+     ],
+     "c035": [
+      "V0035-msa-6"
+     ],
+     "c037": [
+      "V0037-msa-4"
+     ],
+     "c041": [
+      "V0041-msa-4"
+     ],
+     "c043": [
+      "V0043-email-5",
+      "policy-7.4"
+     ],
+     "c044": [
+      "V0044-msa-4"
+     ],
+     "c054": [
+      "V0054-email-4",
+      "policy-7.4"
+     ],
+     "c057": [
+      "V0057-msa-4"
+     ],
+     "c061": [
+      "V0061-msa-4"
+     ],
+     "c062": [
+      "V0062-msa-4"
+     ],
+     "c063": [
+      "V0063-msa-4"
+     ],
+     "c064": [
+      "V0064-msa-4"
+     ],
+     "c065": [
+      "V0065-msa-4"
+     ],
+     "c073": [
+      "V0073-msa-4"
+     ],
+     "c076": [
+      "V0076-msa-4"
+     ],
+     "c079": [
+      "V0079-msa-4"
+     ],
+     "c081": [
+      "V0081-msa-4"
+     ],
+     "c082": [
+      "V0082-msa-4"
+     ],
+     "c083": [
+      "V0083-msa-4"
+     ],
+     "c089": [
+      "V0089-email-5",
+      "policy-7.4"
+     ],
+     "c090": [
+      "V0090-msa-4"
+     ],
+     "c094": [
+      "V0094-msa-4"
+     ],
+     "c095": [
+      "V0095-email-5",
+      "policy-7.4"
+     ],
+     "c101": [
+      "V0101-msa-4"
+     ],
+     "c106": [
+      "V0106-msa-4"
+     ],
+     "c110": [
+      "V0110-msa-4"
+     ],
+     "c113": [
+      "V0113-email-4",
+      "policy-7.4"
+     ],
+     "c115": [
+      "V0115-msa-4"
+     ],
+     "c117": [
+      "V0117-msa-4"
+     ],
+     "c119": [
+      "V0119-msa-4"
+     ],
+     "c120": [
+      "V0120-msa-4"
+     ],
+     "c122": [
+      "V0122-msa-4"
+     ],
+     "c124": [
+      "V0124-msa-4"
+     ],
+     "c125": [
+      "V0125-msa-4"
+     ],
+     "c126": [
+      "policy-7.4"
+     ],
+     "c130": [
+      "V0130-msa-4"
+     ],
+     "c132": [
+      "policy-7.4"
+     ],
+     "c133": [
+      "V0133-msa-4"
+     ],
+     "c135": [
+      "V0135-msa-4"
+     ],
+     "c138": [
+      "V0138-msa-4"
+     ],
+     "c141": [
+      "V0141-msa-4"
+     ],
+     "c146": [
+      "V0146-msa-4"
+     ],
+     "c147": [
+      "V0147-msa-4"
+     ],
+     "c150": [
+      "V0150-msa-4"
+     ],
+     "c153": [
+      "V0153-msa-6"
+     ],
+     "c154": [
+      "V0154-msa-4"
+     ],
+     "c155": [
+      "V0155-msa-6"
+     ],
+     "c156": [
+      "V0156-msa-4"
+     ],
+     "c161": [
+      "V0161-msa-6"
+     ],
+     "c166": [
+      "V0166-msa-4"
+     ],
+     "c172": [
+      "V0172-msa-4"
+     ],
+     "c175": [
+      "V0175-msa-4"
+     ],
+     "c181": [
+      "V0181-msa-4"
+     ],
+     "c182": [
+      "V0182-msa-4"
+     ],
+     "c184": [
+      "V0184-msa-4"
+     ],
+     "c185": [
+      "V0185-msa-4"
+     ],
+     "c191": [
+      "V0191-msa-4"
+     ],
+     "c193": [
+      "V0193-msa-4"
+     ],
+     "c197": [
+      "V0197-msa-4"
+     ],
+     "c200": [
+      "policy-7.4"
+     ]
+    },
+    "passages_shown": 6.2,
+    "by_kind": {
+     "amended_price_in_effect": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "amended_price_not_yet": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "latest_amended_price": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "msa_freight_not_allowed": {
+      "all_found": 15,
+      "cases": 15
+     },
+     "msa_freight_within_cap": {
+      "all_found": 10,
+      "cases": 15
+     },
+     "rush_fee_approved": {
+      "all_found": 9,
+      "cases": 15
+     },
+     "rush_fee_unapproved": {
+      "all_found": 12,
+      "cases": 15
+     },
+     "superseded_price": {
+      "all_found": 0,
+      "cases": 15
+     }
+    }
+   }
+  },
+  "one_query": {
+   "embeddings": {
+    "decided_cases": 120,
+    "all_found": 32,
+    "missed": {
+     "c002": [
+      "V0002-msa-4"
+     ],
+     "c003": [
+      "V0003-msa-4"
+     ],
+     "c006": [
+      "policy-7.4"
+     ],
+     "c007": [
+      "policy-7.4"
+     ],
+     "c008": [
+      "V0008-msa-4"
+     ],
+     "c010": [
+      "V0010-msa-4"
+     ],
+     "c011": [
+      "V0011-msa-4"
+     ],
+     "c014": [
+      "V0014-msa-4"
+     ],
+     "c015": [
+      "policy-7.4"
+     ],
+     "c017": [
+      "V0017-msa-4"
+     ],
+     "c020": [
+      "V0020-msa-4"
+     ],
+     "c021": [
+      "V0021-msa-4"
+     ],
+     "c025": [
+      "V0025-msa-4"
+     ],
+     "c028": [
+      "policy-7.4"
+     ],
+     "c030": [
+      "policy-7.4"
+     ],
+     "c031": [
+      "V0031-msa-4"
+     ],
+     "c032": [
+      "V0032-msa-4"
+     ],
+     "c034": [
+      "V0034-msa-4"
+     ],
+     "c037": [
+      "V0037-msa-4"
+     ],
+     "c041": [
+      "V0041-msa-4"
+     ],
+     "c042": [
+      "policy-7.4"
+     ],
+     "c043": [
+      "policy-7.4"
+     ],
+     "c044": [
+      "V0044-msa-4"
+     ],
+     "c054": [
+      "policy-7.4"
+     ],
+     "c057": [
+      "V0057-msa-4"
+     ],
+     "c058": [
+      "policy-7.4"
+     ],
+     "c061": [
+      "V0061-msa-4"
+     ],
+     "c062": [
+      "V0062-msa-4"
+     ],
+     "c063": [
+      "V0063-msa-4"
+     ],
+     "c064": [
+      "V0064-msa-4"
+     ],
+     "c065": [
+      "V0065-msa-4"
+     ],
+     "c073": [
+      "V0073-msa-4"
+     ],
+     "c076": [
+      "V0076-msa-4"
+     ],
+     "c078": [
+      "policy-7.4"
+     ],
+     "c079": [
+      "V0079-msa-4"
+     ],
+     "c080": [
+      "policy-7.4"
+     ],
+     "c081": [
+      "V0081-msa-4"
+     ],
+     "c082": [
+      "V0082-msa-4"
+     ],
+     "c083": [
+      "V0083-msa-4"
+     ],
+     "c089": [
+      "policy-7.4"
+     ],
+     "c090": [
+      "V0090-msa-4"
+     ],
+     "c093": [
+      "policy-7.4"
+     ],
+     "c094": [
+      "V0094-msa-4"
+     ],
+     "c095": [
+      "policy-7.4"
+     ],
+     "c101": [
+      "V0101-msa-4"
+     ],
+     "c106": [
+      "V0106-msa-4"
+     ],
+     "c107": [
+      "policy-7.4"
+     ],
+     "c109": [
+      "policy-7.4"
+     ],
+     "c110": [
+      "V0110-msa-4"
+     ],
+     "c111": [
+      "policy-7.4"
+     ],
+     "c113": [
+      "policy-7.4"
+     ],
+     "c114": [
+      "policy-7.4"
+     ],
+     "c115": [
+      "V0115-msa-4"
+     ],
+     "c117": [
+      "V0117-msa-4"
+     ],
+     "c119": [
+      "V0119-msa-4"
+     ],
+     "c120": [
+      "V0120-msa-4"
+     ],
+     "c124": [
+      "V0124-msa-4"
+     ],
+     "c125": [
+      "V0125-msa-4"
+     ],
+     "c126": [
+      "policy-7.4"
+     ],
+     "c130": [
+      "V0130-msa-4"
+     ],
+     "c132": [
+      "policy-7.4"
+     ],
+     "c133": [
+      "V0133-msa-4"
+     ],
+     "c135": [
+      "V0135-msa-4"
+     ],
+     "c137": [
+      "policy-7.4"
+     ],
+     "c138": [
+      "V0138-msa-4"
+     ],
+     "c139": [
+      "policy-7.4"
+     ],
+     "c140": [
+      "V0140-msa-6"
+     ],
+     "c145": [
+      "policy-7.4"
+     ],
+     "c146": [
+      "V0146-msa-4"
+     ],
+     "c147": [
+      "V0147-msa-4"
+     ],
+     "c150": [
+      "V0150-msa-4"
+     ],
+     "c151": [
+      "policy-7.4"
+     ],
+     "c154": [
+      "V0154-msa-4"
+     ],
+     "c156": [
+      "V0156-msa-4"
+     ],
+     "c166": [
+      "V0166-msa-4"
+     ],
+     "c167": [
+      "policy-7.4"
+     ],
+     "c168": [
+      "policy-7.4"
+     ],
+     "c172": [
+      "V0172-msa-4"
+     ],
+     "c175": [
+      "V0175-msa-4"
+     ],
+     "c179": [
+      "policy-7.4"
+     ],
+     "c181": [
+      "V0181-msa-4"
+     ],
+     "c182": [
+      "V0182-msa-4"
+     ],
+     "c184": [
+      "V0184-msa-4"
+     ],
+     "c185": [
+      "V0185-msa-4"
+     ],
+     "c191": [
+      "V0191-msa-4"
+     ],
+     "c193": [
+      "V0193-msa-4"
+     ],
+     "c194": [
+      "policy-7.4"
+     ],
+     "c200": [
+      "policy-7.4"
+     ]
+    },
+    "passages_shown": 5.0,
+    "by_kind": {
+     "amended_price_in_effect": {
+      "all_found": 2,
+      "cases": 15
+     },
+     "amended_price_not_yet": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "latest_amended_price": {
+      "all_found": 1,
+      "cases": 15
+     },
+     "msa_freight_not_allowed": {
+      "all_found": 14,
+      "cases": 15
+     },
+     "msa_freight_within_cap": {
+      "all_found": 15,
+      "cases": 15
+     },
+     "rush_fee_approved": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "rush_fee_unapproved": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "superseded_price": {
+      "all_found": 0,
+      "cases": 15
+     }
+    }
+   },
+   "hybrid": {
+    "decided_cases": 120,
+    "all_found": 22,
+    "missed": {
+     "c002": [
+      "V0002-msa-4"
+     ],
+     "c003": [
+      "V0003-msa-4"
+     ],
+     "c006": [
+      "policy-7.4"
+     ],
+     "c007": [
+      "policy-7.4"
+     ],
+     "c008": [
+      "V0008-msa-4"
+     ],
+     "c010": [
+      "V0010-msa-4"
+     ],
+     "c011": [
+      "V0011-msa-4"
+     ],
+     "c014": [
+      "V0014-msa-4"
+     ],
+     "c015": [
+      "policy-7.4"
+     ],
+     "c017": [
+      "V0017-msa-4"
+     ],
+     "c020": [
+      "V0020-msa-4"
+     ],
+     "c021": [
+      "V0021-msa-4"
+     ],
+     "c025": [
+      "V0025-msa-4"
+     ],
+     "c027": [
+      "V0027-msa-6"
+     ],
+     "c028": [
+      "policy-7.4"
+     ],
+     "c030": [
+      "policy-7.4"
+     ],
+     "c031": [
+      "V0031-msa-4"
+     ],
+     "c032": [
+      "V0032-msa-4"
+     ],
+     "c034": [
+      "V0034-msa-4"
+     ],
+     "c035": [
+      "V0035-msa-6"
+     ],
+     "c037": [
+      "V0037-msa-4"
+     ],
+     "c041": [
+      "V0041-msa-4"
+     ],
+     "c042": [
+      "policy-7.4"
+     ],
+     "c043": [
+      "policy-7.4"
+     ],
+     "c044": [
+      "V0044-msa-4"
+     ],
+     "c054": [
+      "policy-7.4"
+     ],
+     "c057": [
+      "V0057-msa-4"
+     ],
+     "c058": [
+      "policy-7.4"
+     ],
+     "c061": [
+      "V0061-msa-4"
+     ],
+     "c062": [
+      "V0062-msa-4"
+     ],
+     "c063": [
+      "V0063-msa-4"
+     ],
+     "c064": [
+      "V0064-msa-4"
+     ],
+     "c065": [
+      "V0065-msa-4"
+     ],
+     "c073": [
+      "V0073-msa-4"
+     ],
+     "c076": [
+      "V0076-msa-4"
+     ],
+     "c078": [
+      "policy-7.4"
+     ],
+     "c079": [
+      "V0079-msa-4"
+     ],
+     "c080": [
+      "policy-7.4"
+     ],
+     "c081": [
+      "V0081-msa-4"
+     ],
+     "c082": [
+      "V0082-msa-4"
+     ],
+     "c083": [
+      "V0083-msa-4"
+     ],
+     "c089": [
+      "policy-7.4"
+     ],
+     "c090": [
+      "V0090-msa-4"
+     ],
+     "c093": [
+      "policy-7.4"
+     ],
+     "c094": [
+      "V0094-msa-4"
+     ],
+     "c095": [
+      "policy-7.4"
+     ],
+     "c101": [
+      "V0101-msa-4"
+     ],
+     "c106": [
+      "V0106-msa-4"
+     ],
+     "c107": [
+      "policy-7.4"
+     ],
+     "c109": [
+      "policy-7.4"
+     ],
+     "c110": [
+      "V0110-msa-4"
+     ],
+     "c111": [
+      "policy-7.4"
+     ],
+     "c113": [
+      "policy-7.4"
+     ],
+     "c114": [
+      "policy-7.4"
+     ],
+     "c115": [
+      "V0115-msa-4"
+     ],
+     "c117": [
+      "V0117-msa-4"
+     ],
+     "c118": [
+      "V0118-msa-6"
+     ],
+     "c119": [
+      "V0119-msa-4"
+     ],
+     "c120": [
+      "V0120-msa-4"
+     ],
+     "c122": [
+      "V0122-msa-4"
+     ],
+     "c124": [
+      "V0124-msa-4"
+     ],
+     "c125": [
+      "V0125-msa-4"
+     ],
+     "c126": [
+      "policy-7.4"
+     ],
+     "c130": [
+      "V0130-msa-4"
+     ],
+     "c132": [
+      "policy-7.4"
+     ],
+     "c133": [
+      "V0133-msa-4"
+     ],
+     "c135": [
+      "V0135-msa-4"
+     ],
+     "c137": [
+      "policy-7.4"
+     ],
+     "c138": [
+      "V0138-msa-4"
+     ],
+     "c139": [
+      "policy-7.4"
+     ],
+     "c140": [
+      "V0140-msa-6"
+     ],
+     "c141": [
+      "V0141-msa-4"
+     ],
+     "c145": [
+      "policy-7.4"
+     ],
+     "c146": [
+      "V0146-msa-4"
+     ],
+     "c147": [
+      "V0147-msa-4"
+     ],
+     "c150": [
+      "V0150-msa-4"
+     ],
+     "c151": [
+      "policy-7.4"
+     ],
+     "c153": [
+      "V0153-msa-6"
+     ],
+     "c154": [
+      "V0154-msa-4"
+     ],
+     "c155": [
+      "V0155-msa-6"
+     ],
+     "c156": [
+      "V0156-msa-4"
+     ],
+     "c161": [
+      "V0161-msa-6"
+     ],
+     "c166": [
+      "V0166-msa-4"
+     ],
+     "c167": [
+      "policy-7.4"
+     ],
+     "c168": [
+      "policy-7.4"
+     ],
+     "c172": [
+      "V0172-msa-4"
+     ],
+     "c175": [
+      "V0175-msa-4"
+     ],
+     "c176": [
+      "V0176-msa-6"
+     ],
+     "c179": [
+      "policy-7.4"
+     ],
+     "c181": [
+      "V0181-msa-4"
+     ],
+     "c182": [
+      "V0182-msa-4"
+     ],
+     "c184": [
+      "V0184-msa-4"
+     ],
+     "c185": [
+      "V0185-msa-4"
+     ],
+     "c191": [
+      "V0191-msa-4"
+     ],
+     "c193": [
+      "V0193-msa-4"
+     ],
+     "c194": [
+      "policy-7.4"
+     ],
+     "c197": [
+      "V0197-msa-4"
+     ],
+     "c200": [
+      "policy-7.4"
+     ]
+    },
+    "passages_shown": 5.0,
+    "by_kind": {
+     "amended_price_in_effect": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "amended_price_not_yet": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "latest_amended_price": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "msa_freight_not_allowed": {
+      "all_found": 14,
+      "cases": 15
+     },
+     "msa_freight_within_cap": {
+      "all_found": 8,
+      "cases": 15
+     },
+     "rush_fee_approved": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "rush_fee_unapproved": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "superseded_price": {
+      "all_found": 0,
+      "cases": 15
+     }
+    }
+   },
+   "keyword": {
+    "decided_cases": 120,
+    "all_found": 17,
+    "missed": {
+     "c002": [
+      "V0002-msa-4"
+     ],
+     "c003": [
+      "V0003-msa-4"
+     ],
+     "c006": [
+      "policy-7.4"
+     ],
+     "c007": [
+      "policy-7.4"
+     ],
+     "c008": [
+      "V0008-msa-4"
+     ],
+     "c010": [
+      "V0010-msa-4"
+     ],
+     "c011": [
+      "V0011-msa-4"
+     ],
+     "c014": [
+      "V0014-msa-4"
+     ],
+     "c015": [
+      "policy-7.4"
+     ],
+     "c017": [
+      "V0017-msa-4"
+     ],
+     "c019": [
+      "V0019-msa-6"
+     ],
+     "c020": [
+      "V0020-msa-4"
+     ],
+     "c021": [
+      "V0021-msa-4"
+     ],
+     "c023": [
+      "V0023-msa-6"
+     ],
+     "c024": [
+      "V0024-msa-6"
+     ],
+     "c025": [
+      "V0025-msa-4"
+     ],
+     "c027": [
+      "V0027-msa-6"
+     ],
+     "c028": [
+      "policy-7.4"
+     ],
+     "c031": [
+      "V0031-msa-4"
+     ],
+     "c032": [
+      "V0032-msa-4"
+     ],
+     "c034": [
+      "V0034-msa-4"
+     ],
+     "c035": [
+      "V0035-msa-6"
+     ],
+     "c037": [
+      "V0037-msa-4"
+     ],
+     "c040": [
+      "V0040-msa-6"
+     ],
+     "c041": [
+      "V0041-msa-4"
+     ],
+     "c042": [
+      "policy-7.4"
+     ],
+     "c043": [
+      "policy-7.4"
+     ],
+     "c044": [
+      "V0044-msa-4"
+     ],
+     "c050": [
+      "V0050-msa-6"
+     ],
+     "c051": [
+      "V0051-msa-6"
+     ],
+     "c054": [
+      "policy-7.4"
+     ],
+     "c057": [
+      "V0057-msa-4"
+     ],
+     "c061": [
+      "V0061-msa-4"
+     ],
+     "c062": [
+      "V0062-msa-4"
+     ],
+     "c063": [
+      "V0063-msa-4"
+     ],
+     "c064": [
+      "V0064-msa-4"
+     ],
+     "c065": [
+      "V0065-msa-4"
+     ],
+     "c068": [
+      "V0068-msa-6"
+     ],
+     "c069": [
+      "V0069-msa-6"
+     ],
+     "c073": [
+      "V0073-msa-4"
+     ],
+     "c076": [
+      "V0076-msa-4"
+     ],
+     "c077": [
+      "V0077-msa-6"
+     ],
+     "c079": [
+      "V0079-msa-4"
+     ],
+     "c081": [
+      "V0081-msa-4"
+     ],
+     "c082": [
+      "V0082-msa-4"
+     ],
+     "c083": [
+      "V0083-msa-4"
+     ],
+     "c089": [
+      "policy-7.4"
+     ],
+     "c090": [
+      "V0090-msa-4"
+     ],
+     "c094": [
+      "V0094-msa-4"
+     ],
+     "c095": [
+      "policy-7.4"
+     ],
+     "c099": [
+      "V0099-msa-6"
+     ],
+     "c101": [
+      "V0101-msa-4"
+     ],
+     "c106": [
+      "V0106-msa-4"
+     ],
+     "c107": [
+      "policy-7.4"
+     ],
+     "c108": [
+      "V0108-msa-6"
+     ],
+     "c109": [
+      "policy-7.4"
+     ],
+     "c110": [
+      "V0110-msa-4"
+     ],
+     "c113": [
+      "policy-7.4"
+     ],
+     "c115": [
+      "V0115-msa-4"
+     ],
+     "c116": [
+      "V0116-msa-6"
+     ],
+     "c117": [
+      "V0117-msa-4"
+     ],
+     "c118": [
+      "V0118-msa-6"
+     ],
+     "c119": [
+      "V0119-msa-4"
+     ],
+     "c120": [
+      "V0120-msa-4"
+     ],
+     "c122": [
+      "V0122-msa-4"
+     ],
+     "c124": [
+      "V0124-msa-4"
+     ],
+     "c125": [
+      "V0125-msa-4"
+     ],
+     "c126": [
+      "policy-7.4"
+     ],
+     "c130": [
+      "V0130-msa-4"
+     ],
+     "c132": [
+      "policy-7.4"
+     ],
+     "c133": [
+      "V0133-msa-4"
+     ],
+     "c135": [
+      "V0135-msa-4"
+     ],
+     "c138": [
+      "V0138-msa-4"
+     ],
+     "c140": [
+      "V0140-msa-6"
+     ],
+     "c141": [
+      "V0141-msa-4"
+     ],
+     "c145": [
+      "policy-7.4"
+     ],
+     "c146": [
+      "V0146-msa-4"
+     ],
+     "c147": [
+      "V0147-msa-4"
+     ],
+     "c149": [
+      "V0149-msa-6"
+     ],
+     "c150": [
+      "V0150-msa-4"
+     ],
+     "c151": [
+      "policy-7.4"
+     ],
+     "c153": [
+      "V0153-msa-6"
+     ],
+     "c154": [
+      "V0154-msa-4"
+     ],
+     "c155": [
+      "V0155-msa-6"
+     ],
+     "c156": [
+      "V0156-msa-4"
+     ],
+     "c157": [
+      "V0157-msa-6"
+     ],
+     "c161": [
+      "V0161-msa-6"
+     ],
+     "c166": [
+      "V0166-msa-4"
+     ],
+     "c167": [
+      "policy-7.4"
+     ],
+     "c172": [
+      "V0172-msa-4"
+     ],
+     "c175": [
+      "V0175-msa-4"
+     ],
+     "c176": [
+      "V0176-msa-6"
+     ],
+     "c179": [
+      "policy-7.4"
+     ],
+     "c181": [
+      "V0181-msa-4"
+     ],
+     "c182": [
+      "V0182-msa-4"
+     ],
+     "c184": [
+      "V0184-msa-4"
+     ],
+     "c185": [
+      "V0185-msa-4"
+     ],
+     "c190": [
+      "V0190-msa-6"
+     ],
+     "c191": [
+      "V0191-msa-4"
+     ],
+     "c193": [
+      "V0193-msa-4"
+     ],
+     "c197": [
+      "V0197-msa-4"
+     ],
+     "c199": [
+      "V0199-msa-6"
+     ],
+     "c200": [
+      "policy-7.4"
+     ]
+    },
+    "passages_shown": 5.0,
+    "by_kind": {
+     "amended_price_in_effect": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "amended_price_not_yet": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "latest_amended_price": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "msa_freight_not_allowed": {
+      "all_found": 6,
+      "cases": 15
+     },
+     "msa_freight_within_cap": {
+      "all_found": 0,
+      "cases": 15
+     },
+     "rush_fee_approved": {
+      "all_found": 4,
+      "cases": 15
+     },
+     "rush_fee_unapproved": {
+      "all_found": 7,
+      "cases": 15
+     },
+     "superseded_price": {
+      "all_found": 0,
+      "cases": 15
+     }
+    }
+   }
+  }
+ },
+ "po_only": {
+  "invoices": 200,
+  "wrong_payments": 15,
+  "wrong_payment_dollars": "31452.12",
+  "wrong_payment_kinds": {
+   "superseded_price": 15
+  },
+  "to_a_person": 136,
+  "needless_reviews": 61,
+  "model_calls": 200,
+  "model_cost_usd": "0.1107",
+  "model_cost_per_invoice_usd": "0.00055",
+  "by_kind": {
+   "amended_price_in_effect": {
+    "person": 15
+   },
+   "amended_price_not_yet": {
+    "person": 15
+   },
+   "clean": {
+    "paid": 49,
+    "person": 1
+   },
+   "latest_amended_price": {
+    "person": 15
+   },
+   "msa_freight_not_allowed": {
+    "person": 15
+   },
+   "msa_freight_within_cap": {
+    "person": 15
+   },
+   "one_over": {
+    "person": 15
+   },
+   "rush_fee_approved": {
+    "person": 15
+   },
+   "rush_fee_unapproved": {
+    "person": 15
+   },
+   "small_price_increase": {
+    "person": 15
+   },
+   "superseded_price": {
+    "paid": 15
+   }
+  },
+  "input_tokens_per_invoice": 1699
+ },
+ "everything": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 91,
+  "needless_reviews": 1,
+  "model_calls": 200,
+  "model_cost_usd": "0.3353",
+  "model_cost_per_invoice_usd": "0.00168",
+  "by_kind": {
+   "amended_price_in_effect": {
+    "paid": 15
+   },
+   "amended_price_not_yet": {
+    "person": 15
+   },
+   "clean": {
+    "paid": 49,
+    "person": 1
+   },
+   "latest_amended_price": {
+    "paid": 15
+   },
+   "msa_freight_not_allowed": {
+    "person": 15
+   },
+   "msa_freight_within_cap": {
+    "paid": 15
+   },
+   "one_over": {
+    "person": 15
+   },
+   "rush_fee_approved": {
+    "paid": 15
+   },
+   "rush_fee_unapproved": {
+    "person": 15
+   },
+   "small_price_increase": {
+    "person": 15
+   },
+   "superseded_price": {
+    "person": 15
+   }
+  },
+  "input_tokens_per_invoice": 6300
+ },
+ "keyword": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 106,
+  "needless_reviews": 16,
+  "model_calls": 200,
+  "model_cost_usd": "0.1536",
+  "model_cost_per_invoice_usd": "0.00077",
+  "by_kind": {
+   "amended_price_in_effect": {
+    "paid": 10,
+    "person": 5
+   },
+   "amended_price_not_yet": {
+    "person": 15
+   },
+   "clean": {
+    "paid": 50
+   },
+   "latest_amended_price": {
+    "paid": 15
+   },
+   "msa_freight_not_allowed": {
+    "person": 15
+   },
+   "msa_freight_within_cap": {
+    "paid": 10,
+    "person": 5
+   },
+   "one_over": {
+    "person": 15
+   },
+   "rush_fee_approved": {
+    "person": 6,
+    "paid": 9
+   },
+   "rush_fee_unapproved": {
+    "person": 15
+   },
+   "small_price_increase": {
+    "person": 15
+   },
+   "superseded_price": {
+    "person": 15
+   }
+  },
+  "input_tokens_per_invoice": 2413
+ },
+ "embeddings": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 103,
+  "needless_reviews": 13,
+  "model_calls": 200,
+  "model_cost_usd": "0.1534",
+  "model_cost_per_invoice_usd": "0.00077",
+  "by_kind": {
+   "amended_price_in_effect": {
+    "person": 4,
+    "paid": 11
+   },
+   "amended_price_not_yet": {
+    "person": 15
+   },
+   "clean": {
+    "paid": 49,
+    "person": 1
+   },
+   "latest_amended_price": {
+    "paid": 15
+   },
+   "msa_freight_not_allowed": {
+    "person": 15
+   },
+   "msa_freight_within_cap": {
+    "paid": 14,
+    "person": 1
+   },
+   "one_over": {
+    "person": 15
+   },
+   "rush_fee_approved": {
+    "paid": 8,
+    "person": 7
+   },
+   "rush_fee_unapproved": {
+    "person": 15
+   },
+   "small_price_increase": {
+    "person": 15
+   },
+   "superseded_price": {
+    "person": 15
+   }
+  },
+  "input_tokens_per_invoice": 2360
+ },
+ "hybrid": {
+  "invoices": 200,
+  "wrong_payments": 0,
+  "wrong_payment_dollars": "0",
+  "wrong_payment_kinds": {},
+  "to_a_person": 108,
+  "needless_reviews": 18,
+  "model_calls": 200,
+  "model_cost_usd": "0.1553",
+  "model_cost_per_invoice_usd": "0.00078",
+  "by_kind": {
+   "amended_price_in_effect": {
+    "person": 9,
+    "paid": 6
+   },
+   "amended_price_not_yet": {
+    "person": 15
+   },
+   "clean": {
+    "paid": 50
+   },
+   "latest_amended_price": {
+    "paid": 14,
+    "person": 1
+   },
+   "msa_freight_not_allowed": {
+    "person": 15
+   },
+   "msa_freight_within_cap": {
+    "paid": 14,
+    "person": 1
+   },
+   "one_over": {
+    "person": 15
+   },
+   "rush_fee_approved": {
+    "person": 7,
+    "paid": 8
+   },
+   "rush_fee_unapproved": {
+    "person": 15
+   },
+   "small_price_increase": {
+    "person": 15
+   },
+   "superseded_price": {
+    "person": 15
+   }
+  },
+  "input_tokens_per_invoice": 2442
+ }
+}

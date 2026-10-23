@@ -113,7 +113,24 @@ def by_kind(cases, outcomes) -> dict:
     return {k: dict(v) for k, v in sorted(table.items())}
 
 
+def _main_documents(number: int):
+    from evals import rag
+    results = rag.score(number)
+    print(f"{'arm':12} {'wrong paid':>10} {'$ wrong':>10} {'to person':>10} {'needless':>9} {'$/invoice':>10} "
+          f"{'tokens in':>10}")
+    for arm, r in ((a, r) for a, r in results.items() if a != "retrieval"):
+        print(f"{arm:12} {r['wrong_payments']:>10} {r['wrong_payment_dollars']:>10} {r['to_a_person']:>10} "
+              f"{r['needless_reviews']:>9} {r['model_cost_per_invoice_usd']:>10} {r['input_tokens_per_invoice']:>10}")
+    for mode, by_retriever in results["retrieval"].items():
+        for r, s in by_retriever.items():
+            print(f"{mode:9} {r:11} retrieval: every deciding passage shown for {s['all_found']} of "
+                  f"{s['decided_cases']}")
+
+
 def main(number: int):
+    from evals import rag
+    if number in rag.ROUNDS:
+        return _main_documents(number)
     folder = DATA / f"round{number}"
     cases = [json.loads(l) for l in (folder / "cases.jsonl").read_text().splitlines()]
     prompts = {p["id"]: p for p in map(json.loads, (folder / "prompts.jsonl").read_text().splitlines())}

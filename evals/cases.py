@@ -28,11 +28,14 @@ from datetime import date, timedelta
 from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 from typing import Dict, List
 
+from evals import library as lib
+
 AS_OF = date(2026, 10, 1)
 
 # Kinds whose right answer is to pay; every other kind should be held.
 PAY = {"clean", "partial_delivery", "freight_allowed", "tax_correct", "recurring_service", "unit_of_measure",
-       "reworded_lines", "freight_at_cap", "repeat_shipment", "verified_bank_change", "partial_tax"}
+       "reworded_lines", "freight_at_cap", "repeat_shipment", "verified_bank_change", "partial_tax",
+       "msa_freight_within_cap", "amended_price_in_effect", "latest_amended_price", "rush_fee_approved"}
 
 # Kinds the rules and the three-way match flag. The rest pass them, so only a
 # check that reads every invoice could catch the ones among them to hold.
@@ -42,6 +45,8 @@ FLAGGED = {
     "vendor_mismatch",
     "reworded_lines", "freight_at_cap", "repeat_shipment", "partial_tax", "partial_freight_over_cap",
     "repeat_not_received",
+    "msa_freight_within_cap", "msa_freight_not_allowed", "amended_price_in_effect", "amended_price_not_yet",
+    "latest_amended_price", "rush_fee_approved", "rush_fee_unapproved",
 }
 
 # Exceptions are oversampled so each kind has enough cases to measure; results
@@ -82,7 +87,30 @@ COUNTS_3 = {
 }
 
 
+# Round 5: the terms that decide each invoice are in the vendor's agreement,
+# its amendments, its emails or the AP policy manual, not on the PO (see
+# `evals/library.py`). Look-alike pairs, and two of round 3's hidden errors as
+# controls.
+COUNTS_5 = {
+    "clean": 50,
+    "msa_freight_within_cap": 15,
+    "msa_freight_not_allowed": 15,
+    "amended_price_in_effect": 15,
+    "amended_price_not_yet": 15,
+    "latest_amended_price": 15,
+    "superseded_price": 15,
+    "rush_fee_approved": 15,
+    "rush_fee_unapproved": 15,
+    "one_over": 15,
+    "small_price_increase": 15,
+}
+# Round 5 kinds that no document decides.
+UNDECIDED_5 = {"clean", "one_over", "small_price_increase"}
+
+
 def counts_for(round_number: int) -> Dict[str, int]:
+    if round_number >= 5:
+        return COUNTS_5
     return COUNTS_3 if round_number >= 3 else COUNTS
 
 
@@ -113,6 +141,14 @@ REASONS = {
     "unverified_bank_change": "asks for payment to an account not on file",
     "duplicate_reworded": "repeats an invoice already paid, reworded",
     "repeat_not_received": "bills a second shipment that has not arrived",
+    "msa_freight_within_cap": "freight within the agreement's cap",
+    "msa_freight_not_allowed": "freight under an agreement whose prices are delivered",
+    "amended_price_in_effect": "a price an amendment in effect set",
+    "amended_price_not_yet": "a price from an amendment not yet in effect",
+    "latest_amended_price": "the price the latest amendment set",
+    "superseded_price": "a price a later amendment replaced",
+    "rush_fee_approved": "a rush fee Purchasing approved in writing",
+    "rush_fee_unapproved": "a rush fee with no written approval",
 }
 
 CENT = Decimal("0.01")
@@ -707,9 +743,176 @@ def _build(rng: random.Random, number: int, kind: str) -> Dict:
     return case
 
 
-def generate(seed: int, counts: Dict[str, int] = COUNTS) -> List[Dict]:
-    """The full set, shuffled so case numbers say nothing about kinds."""
+RUSH_LINES = ["Expedite fee", "Rush charge", "Expedited shipping surcharge", "Priority handling fee"]
+RUSH_FEES = [45, 60, 75, 95, 120, 150, 175, 225]
+
+
+def _build_with_documents(rng: random.Random, number: int, kind: str) -> Dict:
+    """A round 5 case: the PO refers to the vendor's agreement, and the
+    agreement, its amendments, its emails and the AP policy manual decide."""
+    # Kinds that need no document of their own are built as before.
+    case = _build(rng, number, kind) if kind in UNDECIDED_5 else None
+    b = _Builder(rng, number, "clean")
+    if case:
+        # Rebuild the builder's dates from the case, so the documents fit it.
+        b.vendor = case["vendor"]
+        b.po_date, b.receipt_date = date.fromisoformat(case["po"]["po_date"]), \
+            date.fromisoformat(case["receipt"]["receipt_date"])
+        b.invoice_date = date.fromisoformat(case["invoice"]["invoice_date"])
+        b.po_number = case["po"]["po_number"]
+    else:
+        case = {"id": f"c{number:03d}", "kind": kind, "as_of": AS_OF.isoformat(),
+                "truth": {"decision": "pay" if kind in PAY else "hold", "reason": REASONS[kind]},
+                "vendor": b.vendor}
+    msa = lib.msa_number(b.vendor, rng)
+    msa_date = b.po_date - timedelta(days=rng.randint(240, 700))
+    docs = lib.Library(rng, b.vendor, msa, msa_date, AS_OF)
+    terms = {"freight": {"billable": False, "cap": None}, "price_changes": [], "rush": None}
+    deciding: List[str] = []
+    changes = []  # (item, price, effective) for the case's own price amendments
+
+    if kind in UNDECIDED_5:
+        po, receipt, invoice, history = case["po"], case["receipt"], case["invoice"], case["history"]
+        freight = rng.choice(["included", "capped"])
+        cap = Decimal(25 * rng.randint(3, 10)) if freight == "capped" else None
+    else:
+        history = b.background()
+        lines = b.goods()
+        po_lines, billed = lines, [dict(l) for l in lines]
+        freight, cap = rng.choice(["included", "capped"]), None
+        if freight == "capped":
+            cap = Decimal(25 * rng.randint(3, 10))
+        extra = []
+
+        if kind in ("msa_freight_within_cap", "msa_freight_not_allowed"):
+            charge = _money(_subtotal(lines) * Decimal(str(rng.uniform(0.02, 0.08))) + rng.randint(15, 40))
+            if kind == "msa_freight_within_cap":
+                freight, cap = "capped", _round_up(charge + rng.randint(0, 40))
+            else:
+                freight, cap = "included", None
+            extra = [_line(len(lines) + 1, rng.choice(["Freight", "Shipping & handling", "Freight charges"]),
+                           1, charge, is_freight=True)]
+
+        elif kind in ("amended_price_in_effect", "amended_price_not_yet"):
+            # Big enough for the rules to flag, so the pair differs only in the date.
+            while True:
+                target = rng.choice(lines)
+                raised = _money(Decimal(target["unit_price"]) * Decimal(str(rng.uniform(1.03, 1.12))))
+                rise = (raised - Decimal(target["unit_price"])) * target["quantity"]
+                if rise >= _subtotal(lines) * Decimal("0.015"):
+                    break
+            if kind == "amended_price_in_effect":
+                span = max(1, (b.invoice_date - b.po_date).days)
+                effective = b.po_date + timedelta(days=rng.randint(1, span))
+            else:
+                effective = b.invoice_date + timedelta(days=rng.randint(5, 45))
+            changes.append((target["description"], raised, effective))
+            billed = [_line(l["line_number"], l["description"], l["quantity"],
+                            raised if l is target else Decimal(l["unit_price"])) for l in lines]
+
+        elif kind in ("latest_amended_price", "superseded_price"):
+            target = rng.choice(lines)
+            first_price = Decimal(target["unit_price"])  # the PO was raised at the first amendment's price
+            first_on = b.po_date - timedelta(days=rng.randint(10, 120))
+            span = max(1, (b.invoice_date - b.po_date).days)
+            latest_on = b.po_date + timedelta(days=rng.randint(1, span))
+            while True:
+                if kind == "latest_amended_price":
+                    factor = rng.choice([rng.uniform(0.85, 0.97), rng.uniform(1.03, 1.15)])
+                else:
+                    factor = rng.uniform(0.85, 0.97)
+                latest_price = _money(first_price * Decimal(str(factor)))
+                # A latest price billed is a change from the PO the rules see.
+                if abs(latest_price - first_price) * target["quantity"] >= _subtotal(lines) * Decimal("0.015"):
+                    break
+                target = rng.choice(lines)
+                first_price = Decimal(target["unit_price"])
+            changes += [(target["description"], first_price, first_on),
+                        (target["description"], latest_price, latest_on)]
+            charged = latest_price if kind == "latest_amended_price" else first_price
+            billed = [_line(l["line_number"], l["description"], l["quantity"],
+                            charged if l is target else Decimal(l["unit_price"])) for l in lines]
+
+        elif kind in ("rush_fee_approved", "rush_fee_unapproved"):
+            amount = _money(rng.choice(RUSH_FEES))
+            extra = [_line(len(lines) + 1, rng.choice(RUSH_LINES), 1, amount, is_fee=True)]
+            offered = b.receipt_date - timedelta(days=rng.randint(6, 15))
+            docs.email(offered, f"Expedite option for {b.po_number}", docs.contact, lib.BUYER_MAIL,
+                       f"We can expedite {b.po_number} to arrive by {b.receipt_date.isoformat()} for a rush fee "
+                       f"of ${amount}. Please confirm in writing if you would like us to go ahead.")
+            replied = offered + timedelta(days=rng.randint(0, 2))
+            form = "approved" if kind == "rush_fee_approved" else rng.choice(["none", "declined", "other_po", "phone"])
+            if form == "approved":
+                subject = docs.email(replied, f"Re: Expedite option for {b.po_number}", lib.BUYER_MAIL, docs.contact,
+                                     f"Approved: please expedite {b.po_number}. We accept the ${amount} rush fee.")
+                terms["rush"] = {"form": form, "fee": str(amount), "approval": subject}
+            else:
+                if form == "declined":
+                    docs.email(replied, f"Re: Expedite option for {b.po_number}", lib.BUYER_MAIL, docs.contact,
+                               f"Thanks, but the standard delivery date works for us. Please ship {b.po_number} "
+                               "as normal.")
+                elif form == "other_po":
+                    other = f"PO-{b.po_date.year}-{(number * 41) % 9000 + 1000}"
+                    if other == b.po_number:
+                        other = f"PO-{b.po_date.year}-{(number * 43) % 9000 + 1000}"
+                    docs.email(replied, f"Expedite request for {other}", lib.BUYER_MAIL, docs.contact,
+                               f"Approved: please expedite {other}. We accept the ${amount} rush fee on that order.")
+                elif form == "phone":
+                    docs.email(replied, f"Re: Expedite option for {b.po_number}", docs.contact, lib.BUYER_MAIL,
+                               f"As agreed on the phone with your team today, we are expediting {b.po_number}. "
+                               f"The ${amount} rush fee will appear on our invoice.")
+                terms["rush"] = {"form": form, "fee": str(amount)}
+
+        else:
+            raise ValueError(f"unknown round 5 kind {kind}")
+
+        po = b.po(po_lines)
+        receipt = b.receipt(po_lines)
+        invoice = b.invoice(billed + extra, notes=b.note(""))
+
+    po["terms"] = (f"Pricing, freight and all other charges per Master Supply Agreement {msa}, as amended. "
+                   f"Payment terms: {b.vendor['payment_terms'].replace('NET', 'Net ')}.")
+    po["freight"] = {"billable": None, "cap": None}  # on the agreement, not the PO
+    clauses, freight_id = docs.agreement(freight, _s(cap) if cap is not None else None)
+    terms["freight"] = {"billable": freight == "capped", "cap": _s(cap) if cap is not None else None}
+    for item, price, effective in changes:
+        docs.price_amendment(item, _s(price), effective)
+    billed_items = {l["description"] for l in invoice["line_items"]}
+    off_invoice = [(name, _s(_money(rng.uniform(lo, hi)))) for name, lo, hi, _, _ in GOODS.get(b.trade, [])
+                   if name not in billed_items]
+    docs.distractions(off_invoice, msa_date, b.invoice_date)
+    if rng.random() < 0.5:
+        docs.delivery_email(po["po_number"], b.po_date + timedelta(days=rng.randint(1, 3)),
+                            b.receipt_date - timedelta(days=b.receipt_date.weekday()))
+    passages, ids = docs.documents()
+    for item, price, effective in changes:
+        change = f"from the effective date the unit price of \"{item}\" is ${_s(price)}."
+        terms["price_changes"].append({"item": item, "price": _s(price), "effective": effective.isoformat(),
+                                       "id": ids[change]})
+
+    if kind.startswith("msa_freight"):
+        deciding = [freight_id]
+    # An amendment says its price applies "from the effective date"; the
+    # agreement's pricing clause says that means invoices dated from then.
+    elif kind in ("amended_price_in_effect", "amended_price_not_yet"):
+        deciding = [terms["price_changes"][0]["id"], f"{b.vendor['id']}-msa-4"]
+    elif kind in ("latest_amended_price", "superseded_price"):
+        deciding = [max(terms["price_changes"], key=lambda c: c["effective"])["id"], f"{b.vendor['id']}-msa-4"]
+    elif kind == "rush_fee_approved":
+        deciding = [ids[terms["rush"]["approval"]], lib.RUSH]
+    elif kind == "rush_fee_unapproved":
+        deciding = [lib.RUSH]
+
+    case.update(po=po, receipt=receipt, history=history, invoice=invoice, msa=msa, terms=terms,
+                documents=clauses + passages, deciding=deciding)
+    return case
+
+
+def generate(seed: int, counts: Dict[str, int] = COUNTS, documents: bool = False) -> List[Dict]:
+    """The full set, shuffled so case numbers say nothing about kinds. With
+    `documents`, the PO's terms live in the vendor's documents (round 5)."""
     rng = random.Random(seed)
     kinds = [kind for kind, count in counts.items() for _ in range(count)]
     rng.shuffle(kinds)
-    return [_build(rng, number, kind) for number, kind in enumerate(kinds, 1)]
+    build = _build_with_documents if documents else _build
+    return [build(rng, number, kind) for number, kind in enumerate(kinds, 1)]

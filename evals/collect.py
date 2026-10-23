@@ -1,6 +1,10 @@
 """Asks each model for its verdict on every invoice in a round.
 
     python -m evals.collect --round 1 --model haiku [--limit 10] [--seed 0]
+    python -m evals.collect --round 5 --model haiku --arm everything
+
+For round 5 (see `evals.rag`) the prompts for each arm are built first, by
+`python -m evals.rag --round 5`, and each arm's answers are kept apart.
 
 For a reading round (see `evals.reading`), the prompts are built from the
 invoices as read from their PDFs, so the readings must be recorded first.
@@ -27,7 +31,7 @@ from apps.api.services import review
 from apps.api.services.case_file import case_file_for
 from apps.api.services.claude_provider import ClaudeCLI, ClaudeCLIError
 from evals import cases as case_set
-from evals import reading, seed
+from evals import rag, reading, seed
 
 DATA = Path(__file__).parent / "data"
 ATTEMPTS = 2
@@ -78,23 +82,37 @@ async def ask(model: str, case_id: str, text: str) -> dict:
     return {"id": case_id, "model": model, "attempts": attempts}
 
 
-async def main(number: int, model: str, seed_value: int, limit):
+def _arm_prompts(folder: Path, arm: str, limit):
+    cases = [json.loads(l) for l in (folder / "cases.jsonl").read_text().splitlines()][:limit]
+    built = {p["id"]: p for p in map(json.loads, (folder / f"prompts-{arm}.jsonl").read_text().splitlines())}
+    return cases, built
+
+
+async def main(number: int, model: str, seed_value: int, limit, arm=None):
     folder = round_dir(number)
+    if number in rag.ROUNDS and seed_value != number:
+        folder = rag.DATA / f"pilot{number}-seed{seed_value}"  # a pilot set, built by evals.rag --seed
     folder.mkdir(parents=True, exist_ok=True)
-    if number in reading.ROUNDS:
+    if number in rag.ROUNDS:
+        if arm not in rag.ARMS:
+            raise SystemExit(f"round {number} needs --arm, one of {', '.join(rag.ARMS)}")
+        cases, built = _arm_prompts(folder, arm, limit)
+    elif number in reading.ROUNDS:
         cases = reading.printed_cases(number)[:limit]
         built = await reading.prompts(cases, reading.recorded(number))
     else:
         cases = case_set.generate(seed=seed_value, counts=case_set.counts_for(number))[:limit]
         built = await prompts(cases)
     cases_path = folder / "cases.jsonl"
-    if not cases_path.exists():
+    if number in rag.ROUNDS:
+        pass  # cases and prompts were written by evals.rag
+    elif not cases_path.exists():
         cases_path.write_text("".join(json.dumps(c) + "\n" for c in cases))
     prompts_path = folder / "prompts.jsonl"
-    if not prompts_path.exists():
+    if number not in rag.ROUNDS and not prompts_path.exists():
         prompts_path.write_text("".join(json.dumps({"id": i, **p}) + "\n" for i, p in built.items()))
 
-    out = folder / f"answers-{model}.jsonl"
+    out = folder / (f"answers-{model}-{arm}.jsonl" if number in rag.ROUNDS else f"answers-{model}.jsonl")
     done = {json.loads(line)["id"] for line in out.read_text().splitlines()} if out.exists() else set()
     # An invoice refused at intake goes to a person without a review.
     todo = [c["id"] for c in cases if c["id"] not in done and "prompt" in built[c["id"]]]
@@ -118,5 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", required=True, choices=["haiku", "sonnet", "opus"])
     parser.add_argument("--seed", type=int, help="which case set (default: the round number)")
     parser.add_argument("--limit", type=int, help="only the first N cases (for a pilot)")
+    parser.add_argument("--arm", choices=rag.ARMS, help="round 5: what the review is shown of the documents")
     args = parser.parse_args()
-    asyncio.run(main(args.round, args.model, args.seed if args.seed is not None else args.round, args.limit))
+    asyncio.run(main(args.round, args.model, args.seed if args.seed is not None else args.round, args.limit,
+                     args.arm))

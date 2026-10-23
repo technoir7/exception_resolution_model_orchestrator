@@ -54,6 +54,10 @@ dev = [
     "mypy>=1.8.0",
     "black>=24.1.0",
 ]
+# Round 5 of the benchmark only: a 30 MB static embedding model, numpy, no PyTorch.
+retrieval = [
+    "model2vec>=0.10.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]

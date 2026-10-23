@@ -1,0 +1,605 @@
+{
+ "per_line": {
+  "embeddings": {
+   "decided_cases": 120,
+   "all_found": 112,
+   "missed": {
+    "c090": [
+     "V0090-email-5"
+    ],
+    "c104": [
+     "V0104-email-5"
+    ],
+    "c141": [
+     "V0141-email-5"
+    ],
+    "c144": [
+     "V0144-email-4"
+    ],
+    "c147": [
+     "V0147-email-4"
+    ],
+    "c193": [
+     "V0193-email-5"
+    ],
+    "c198": [
+     "V0198-email-5"
+    ],
+    "c200": [
+     "V0200-email-6"
+    ]
+   },
+   "passages_shown": 6.5,
+   "by_kind": {
+    "amended_price_in_effect": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "amended_price_not_yet": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "latest_amended_price": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_not_allowed": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_within_cap": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "rush_fee_approved": {
+     "all_found": 7,
+     "cases": 15
+    },
+    "rush_fee_unapproved": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "superseded_price": {
+     "all_found": 15,
+     "cases": 15
+    }
+   }
+  },
+  "hybrid": {
+   "decided_cases": 120,
+   "all_found": 116,
+   "missed": {
+    "c008": [
+     "policy-7.4"
+    ],
+    "c090": [
+     "V0090-email-5"
+    ],
+    "c104": [
+     "V0104-email-5"
+    ],
+    "c126": [
+     "V0126-email-6",
+     "policy-7.4"
+    ]
+   },
+   "passages_shown": 6.4,
+   "by_kind": {
+    "amended_price_in_effect": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "amended_price_not_yet": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "latest_amended_price": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_not_allowed": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_within_cap": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "rush_fee_approved": {
+     "all_found": 12,
+     "cases": 15
+    },
+    "rush_fee_unapproved": {
+     "all_found": 14,
+     "cases": 15
+    },
+    "superseded_price": {
+     "all_found": 15,
+     "cases": 15
+    }
+   }
+  },
+  "keyword": {
+   "decided_cases": 120,
+   "all_found": 112,
+   "missed": {
+    "c003": [
+     "V0003-msa-6"
+    ],
+    "c008": [
+     "policy-7.4"
+    ],
+    "c018": [
+     "V0018-msa-6"
+    ],
+    "c020": [
+     "V0020-msa-6"
+    ],
+    "c108": [
+     "V0108-msa-6"
+    ],
+    "c111": [
+     "V0111-msa-6"
+    ],
+    "c126": [
+     "V0126-email-6",
+     "policy-7.4"
+    ],
+    "c170": [
+     "V0170-msa-6"
+    ]
+   },
+   "passages_shown": 6.2,
+   "by_kind": {
+    "amended_price_in_effect": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "amended_price_not_yet": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "latest_amended_price": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_not_allowed": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_within_cap": {
+     "all_found": 9,
+     "cases": 15
+    },
+    "rush_fee_approved": {
+     "all_found": 14,
+     "cases": 15
+    },
+    "rush_fee_unapproved": {
+     "all_found": 14,
+     "cases": 15
+    },
+    "superseded_price": {
+     "all_found": 15,
+     "cases": 15
+    }
+   }
+  }
+ },
+ "one_query": {
+  "embeddings": {
+   "decided_cases": 120,
+   "all_found": 88,
+   "missed": {
+    "c008": [
+     "policy-7.4"
+    ],
+    "c014": [
+     "V0014-msa-6"
+    ],
+    "c019": [
+     "policy-7.4"
+    ],
+    "c026": [
+     "policy-7.4"
+    ],
+    "c028": [
+     "policy-7.4"
+    ],
+    "c053": [
+     "policy-7.4"
+    ],
+    "c064": [
+     "policy-7.4"
+    ],
+    "c076": [
+     "V0076-msa-6"
+    ],
+    "c078": [
+     "policy-7.4"
+    ],
+    "c081": [
+     "policy-7.4"
+    ],
+    "c086": [
+     "policy-7.4"
+    ],
+    "c090": [
+     "policy-7.4"
+    ],
+    "c104": [
+     "policy-7.4"
+    ],
+    "c113": [
+     "policy-7.4"
+    ],
+    "c121": [
+     "policy-7.4"
+    ],
+    "c126": [
+     "policy-7.4"
+    ],
+    "c132": [
+     "policy-7.4"
+    ],
+    "c136": [
+     "policy-7.4"
+    ],
+    "c141": [
+     "policy-7.4"
+    ],
+    "c142": [
+     "policy-7.4"
+    ],
+    "c144": [
+     "policy-7.4"
+    ],
+    "c147": [
+     "policy-7.4"
+    ],
+    "c150": [
+     "policy-7.4"
+    ],
+    "c152": [
+     "policy-7.4"
+    ],
+    "c160": [
+     "policy-7.4"
+    ],
+    "c167": [
+     "policy-7.4"
+    ],
+    "c173": [
+     "policy-7.4"
+    ],
+    "c180": [
+     "policy-7.4"
+    ],
+    "c185": [
+     "policy-7.4"
+    ],
+    "c193": [
+     "policy-7.4"
+    ],
+    "c198": [
+     "policy-7.4"
+    ],
+    "c200": [
+     "policy-7.4"
+    ]
+   },
+   "passages_shown": 5.0,
+   "by_kind": {
+    "amended_price_in_effect": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "amended_price_not_yet": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "latest_amended_price": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_not_allowed": {
+     "all_found": 14,
+     "cases": 15
+    },
+    "msa_freight_within_cap": {
+     "all_found": 14,
+     "cases": 15
+    },
+    "rush_fee_approved": {
+     "all_found": 0,
+     "cases": 15
+    },
+    "rush_fee_unapproved": {
+     "all_found": 0,
+     "cases": 15
+    },
+    "superseded_price": {
+     "all_found": 15,
+     "cases": 15
+    }
+   }
+  },
+  "hybrid": {
+   "decided_cases": 120,
+   "all_found": 85,
+   "missed": {
+    "c003": [
+     "V0003-msa-6"
+    ],
+    "c008": [
+     "policy-7.4"
+    ],
+    "c018": [
+     "V0018-msa-6"
+    ],
+    "c019": [
+     "policy-7.4"
+    ],
+    "c020": [
+     "V0020-msa-6"
+    ],
+    "c026": [
+     "policy-7.4"
+    ],
+    "c028": [
+     "policy-7.4"
+    ],
+    "c053": [
+     "policy-7.4"
+    ],
+    "c064": [
+     "policy-7.4"
+    ],
+    "c078": [
+     "policy-7.4"
+    ],
+    "c081": [
+     "policy-7.4"
+    ],
+    "c086": [
+     "policy-7.4"
+    ],
+    "c090": [
+     "policy-7.4"
+    ],
+    "c104": [
+     "policy-7.4"
+    ],
+    "c108": [
+     "V0108-msa-6"
+    ],
+    "c113": [
+     "policy-7.4"
+    ],
+    "c121": [
+     "policy-7.4"
+    ],
+    "c126": [
+     "policy-7.4"
+    ],
+    "c132": [
+     "policy-7.4"
+    ],
+    "c136": [
+     "policy-7.4"
+    ],
+    "c141": [
+     "policy-7.4"
+    ],
+    "c142": [
+     "policy-7.4"
+    ],
+    "c144": [
+     "policy-7.4"
+    ],
+    "c147": [
+     "policy-7.4"
+    ],
+    "c150": [
+     "policy-7.4"
+    ],
+    "c152": [
+     "policy-7.4"
+    ],
+    "c160": [
+     "policy-7.4"
+    ],
+    "c167": [
+     "policy-7.4"
+    ],
+    "c170": [
+     "V0170-msa-6"
+    ],
+    "c173": [
+     "policy-7.4"
+    ],
+    "c180": [
+     "policy-7.4"
+    ],
+    "c185": [
+     "policy-7.4"
+    ],
+    "c193": [
+     "policy-7.4"
+    ],
+    "c198": [
+     "policy-7.4"
+    ],
+    "c200": [
+     "policy-7.4"
+    ]
+   },
+   "passages_shown": 5.0,
+   "by_kind": {
+    "amended_price_in_effect": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "amended_price_not_yet": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "latest_amended_price": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_not_allowed": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_within_cap": {
+     "all_found": 10,
+     "cases": 15
+    },
+    "rush_fee_approved": {
+     "all_found": 0,
+     "cases": 15
+    },
+    "rush_fee_unapproved": {
+     "all_found": 0,
+     "cases": 15
+    },
+    "superseded_price": {
+     "all_found": 15,
+     "cases": 15
+    }
+   }
+  },
+  "keyword": {
+   "decided_cases": 120,
+   "all_found": 90,
+   "missed": {
+    "c003": [
+     "V0003-msa-6"
+    ],
+    "c006": [
+     "V0006-msa-6"
+    ],
+    "c008": [
+     "policy-7.4"
+    ],
+    "c016": [
+     "V0016-msa-6"
+    ],
+    "c018": [
+     "V0018-msa-6"
+    ],
+    "c020": [
+     "V0020-msa-6"
+    ],
+    "c027": [
+     "V0027-msa-6"
+    ],
+    "c042": [
+     "V0042-msa-6"
+    ],
+    "c045": [
+     "V0045-msa-6"
+    ],
+    "c053": [
+     "policy-7.4"
+    ],
+    "c059": [
+     "V0059-msa-6"
+    ],
+    "c076": [
+     "V0076-msa-6"
+    ],
+    "c086": [
+     "policy-7.4"
+    ],
+    "c090": [
+     "policy-7.4"
+    ],
+    "c108": [
+     "V0108-msa-6"
+    ],
+    "c111": [
+     "V0111-msa-6"
+    ],
+    "c113": [
+     "policy-7.4"
+    ],
+    "c121": [
+     "policy-7.4"
+    ],
+    "c126": [
+     "policy-7.4"
+    ],
+    "c132": [
+     "policy-7.4"
+    ],
+    "c141": [
+     "policy-7.4"
+    ],
+    "c144": [
+     "policy-7.4"
+    ],
+    "c150": [
+     "policy-7.4"
+    ],
+    "c160": [
+     "policy-7.4"
+    ],
+    "c167": [
+     "policy-7.4"
+    ],
+    "c170": [
+     "V0170-msa-6"
+    ],
+    "c175": [
+     "V0175-msa-6"
+    ],
+    "c195": [
+     "V0195-msa-6"
+    ],
+    "c198": [
+     "policy-7.4"
+    ],
+    "c200": [
+     "policy-7.4"
+    ]
+   },
+   "passages_shown": 5.0,
+   "by_kind": {
+    "amended_price_in_effect": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "amended_price_not_yet": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "latest_amended_price": {
+     "all_found": 15,
+     "cases": 15
+    },
+    "msa_freight_not_allowed": {
+     "all_found": 12,
+     "cases": 15
+    },
+    "msa_freight_within_cap": {
+     "all_found": 3,
+     "cases": 15
+    },
+    "rush_fee_approved": {
+     "all_found": 7,
+     "cases": 15
+    },
+    "rush_fee_unapproved": {
+     "all_found": 8,
+     "cases": 15
+    },
+    "superseded_price": {
+     "all_found": 15,
+     "cases": 15
+    }
+   }
+  }
+ }
+}
