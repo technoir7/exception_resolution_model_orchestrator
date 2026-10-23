@@ -19,6 +19,7 @@ from apps.api.models.purchase_order import PurchaseOrder
 from apps.api.models.receipt import Receipt
 from apps.api.models.vendor import Vendor
 from apps.api.services.flags import flags_for
+from apps.api.services.retrieval import Passage
 
 # Far enough back to catch a resubmitted invoice; near enough to stay short.
 HISTORY_DAYS = 120
@@ -33,6 +34,9 @@ class CaseFile:
     vendor: Optional[Vendor]
     recent: List[Invoice] = field(default_factory=list)
     flags: List[str] = field(default_factory=list)
+    # The vendor's agreement, amendments and emails, and the AP policy, that
+    # the PO's terms refer to. None when they were not looked up.
+    documents: Optional[List[Passage]] = None
 
 
 async def case_file_for(

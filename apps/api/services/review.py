@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Iterable, List
 
 from apps.api.services.case_file import CaseFile
+from apps.api.services.retrieval import SOURCES
 
 DECISIONS = ("pay", "hold")
 REASONS = ("none", "price", "quantity", "charges", "tax", "duplicate", "bank_details", "vendor", "other")
@@ -36,6 +37,12 @@ Pay only if all of these are true:
 Otherwise hold it. A flag from the automatic checks is not a reason to hold on
 its own: they compare totals crudely and flag many invoices that are fine.
 Decide from the documents."""
+
+DOCUMENTS_POLICY = """The PO's terms include the documents shown with it: the vendor's agreement as
+amended (an amendment applies from its effective date, and overrides the
+agreement and any earlier amendment on the same point), what was agreed in
+writing by email, and the buyer's AP policy. Where these set a price or allow
+a charge, they decide it as the PO's own terms would."""
 
 ANSWER = """Reply with only a JSON object:
 {"decision": "pay" or "hold",
@@ -105,6 +112,14 @@ def _po(file: CaseFile) -> List[str]:
             "Lines:", *_lines(po.line_items), f"Total {po.currency} {po.total_amount}"]
 
 
+def _documents(file: CaseFile) -> List[str]:
+    heading = "VENDOR'S AGREEMENT, AMENDMENTS, EMAILS AND AP POLICY"
+    if not file.documents:
+        return [f"{heading}: none found"]
+    ordered = sorted(file.documents, key=lambda d: (SOURCES.index(d.source), d.dated or ""))
+    return [f"{heading}:", *(f"[{d.title}] {d.text}" for d in ordered)]
+
+
 def _receipt(file: CaseFile) -> List[str]:
     if not file.receipts:
         return ["GOODS RECEIPT: none on file for this PO"]
@@ -133,8 +148,13 @@ def _flags(file: CaseFile) -> List[str]:
 
 
 def prompt(file: CaseFile) -> str:
-    sections = [_invoice(file), _vendor(file), _po(file), _receipt(file), _recent(file), _flags(file)]
-    return "\n\n".join([POLICY, *("\n".join(s) for s in sections), ANSWER])
+    policy = [POLICY]
+    sections = [_invoice(file), _vendor(file), _po(file)]
+    if file.documents is not None:
+        policy.append(DOCUMENTS_POLICY)
+        sections.append(_documents(file))
+    sections += [_receipt(file), _recent(file), _flags(file)]
+    return "\n\n".join([*policy, *("\n".join(s) for s in sections), ANSWER])
 
 
 def parse(reply: str) -> Verdict:

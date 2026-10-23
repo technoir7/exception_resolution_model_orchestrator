@@ -128,3 +128,61 @@ class TestDeliveriesAndBankChanges:
         file.vendor.remit_previous = "Union Plains Bank, account ending 1234"
         text = review.prompt(file)
         assert "updated 2026-03-02" in text and "Union Plains Bank, account ending 1234" in text
+
+
+class TestTheVendorsDocuments:
+    """The agreement, amendments, emails and AP policy that a PO refers to."""
+
+    def docs(self):
+        from apps.api.services.retrieval import Passage
+        return [
+            Passage("p", "policy", "AP Policy Manual 7.4 Expedite and rush fees", "Rush fees need written approval."),
+            Passage("e", "email", "Email 2026-04-02, Purchasing to vendor", "The $80 expedite fee is approved.",
+                    vendor_id="V1", dated="2026-04-02"),
+            Passage("a2", "amendment", "Amendment No. 2 to MSA-1, effective 2026-06-01", "Bolt price $0.51.",
+                    vendor_id="V1", dated="2026-06-01"),
+            Passage("m", "agreement", "MSA-1 section 6, Freight", "Freight is included in prices.", vendor_id="V1"),
+            Passage("a1", "amendment", "Amendment No. 1 to MSA-1, effective 2026-02-01", "Bolt price $0.55.",
+                    vendor_id="V1", dated="2026-02-01"),
+        ]
+
+    async def file(self, db_session):
+        case = first("clean")
+        invoices = await seed.load(db_session, TEST_TENANT_ID, [case])
+        return await case_file_for(db_session, TEST_TENANT_ID, invoices[case["id"]], today=cases.AS_OF)
+
+    async def test_are_left_out_when_none_were_looked_up(self, db_session):
+        file = await self.file(db_session)
+        text = review.prompt(file)
+        assert text.startswith(review.POLICY + "\n\nINVOICE ")
+        assert review.DOCUMENTS_POLICY not in text
+
+    async def test_every_passage_is_shown_with_its_title(self, db_session):
+        file = await self.file(db_session)
+        file.documents = self.docs()
+        text = review.prompt(file)
+        for d in file.documents:
+            assert f"[{d.title}] {d.text}" in text
+
+    async def test_the_policy_says_how_they_bear_on_the_terms(self, db_session):
+        file = await self.file(db_session)
+        file.documents = self.docs()
+        assert review.prompt(file).startswith(review.POLICY + "\n\n" + review.DOCUMENTS_POLICY)
+
+    async def test_come_in_order_agreement_amendments_by_date_emails_policy(self, db_session):
+        file = await self.file(db_session)
+        file.documents = self.docs()
+        text = review.prompt(file)
+        positions = [text.index(f"[{d.title}]") for d in sorted(file.documents, key=lambda d: "m a1 a2 e p".split().index(d.id))]
+        assert positions == sorted(positions)
+
+    async def test_come_after_the_po(self, db_session):
+        file = await self.file(db_session)
+        file.documents = self.docs()
+        text = review.prompt(file)
+        assert text.index("PURCHASE ORDER") < text.index("[MSA-1 section 6, Freight]") < text.index("GOODS RECEIPT")
+
+    async def test_says_so_when_none_were_found(self, db_session):
+        file = await self.file(db_session)
+        file.documents = []
+        assert "VENDOR'S AGREEMENT, AMENDMENTS, EMAILS AND AP POLICY: none found" in review.prompt(file)
