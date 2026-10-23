@@ -76,4 +76,4 @@ Anthropic, under your own agreement with them.
 The code, the full test results and a demo are public:
 [github.com/technoir7/exception_resolution_model_orchestrator](https://github.com/technoir7/exception_resolution_model_orchestrator).
 To talk about measuring it on your invoices, message me on
-[LinkedIn](https://www.linkedin.com/in/aaronfung).
+[LinkedIn](https://www.linkedin.com/in/aaron-fung-bb0a3875).
